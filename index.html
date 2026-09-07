@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
   <noscript>
     <style>
-      .hero-logo, .hero-subtitle, .hero-purchase, .line-inner { opacity: 1 !important; transform: none !important; }
+      .hero-logo, .hero-subtitle, .hero-purchase, .line-inner, .reveal { opacity: 1 !important; transform: none !important; }
     </style>
   </noscript>
 </head>
@@ -56,39 +56,142 @@
       </div>
     </section>
 
-    <!-- SECCIONES (esqueleto, se rellenan después) -->
-    <section id="como-funciona" class="section">
-      <div class="section-inner">
-        <h2>Cómo funciona</h2>
-        <p class="section-placeholder">Una llama de luz viva se enciende sobre una niebla suave. Sin fuego, sin humo real: solo calma.</p>
+    <!-- SECCIONES DE CONTENIDO -->
+    <section id="como-funciona" class="section section-como">
+      <div class="section-inner section-inner--wide">
+        <span class="eyebrow reveal">EL GESTO</span>
+        <h2 class="reveal">Cómo funciona</h2>
+        <p class="section-intro reveal">Tres pasos para encender la calma. Sin fuego, sin humo, sin calor — solo una llama de luz y un hilo de aroma.</p>
+
+        <div class="steps-row">
+          <div class="step reveal">
+            <span class="step-number">01</span>
+            <h3 class="step-title">Llena y perfuma</h3>
+            <p class="step-line">Añade agua y unas gotas de tu aceite esencial favorito.</p>
+          </div>
+          <div class="step reveal">
+            <span class="step-number">02</span>
+            <h3 class="step-title">Enciende</h3>
+            <p class="step-line">La llama LED cobra vida y empieza a subir una niebla suave.</p>
+          </div>
+          <div class="step reveal">
+            <span class="step-number">03</span>
+            <h3 class="step-title">Respira</h3>
+            <p class="step-line">La luz cálida y el aroma llenan la habitación. Tú solo bajas el ritmo.</p>
+          </div>
+        </div>
+
+        <p class="steps-note reveal">Se apaga solo cuando se queda sin agua. Funciona por USB.</p>
       </div>
     </section>
 
-    <section id="beneficios" class="section">
-      <div class="section-inner">
-        <h2>Por qué Noor</h2>
-        <p class="section-placeholder">Diseño atemporal, materiales cálidos y un ritual diario que transforma tu espacio.</p>
+    <section id="beneficios" class="section section-beneficios">
+      <div class="section-inner section-inner--wide">
+        <span class="eyebrow reveal">DISEÑADO PARA EL DÍA A DÍA</span>
+        <h2 class="reveal">Por qué Noor</h2>
+        <p class="section-intro reveal">Un objeto, muchos momentos. Cada detalle pensado para encender tu casa cada día.</p>
+
+        <div class="benefits-grid">
+          <article class="benefit-card reveal">
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.5 2 2.5 3.5 2.5 5.5 0 1-.4 1.8-1 2.5.9-.3 1.7-1 2-2 1 1.2 1.5 2.6 1.5 4A5 5 0 0 1 7 15c0-2 1-3.5 2-5-.3 1 0 1.8.6 2.3C9 10 9 6.5 12 3Z"/></svg>
+            <h3>Llama viva LED</h3>
+            <p>Efecto de llama realista en 7 tonos cálidos. Hipnótica, nunca peligrosa.</p>
+          </article>
+          <article class="benefit-card reveal">
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3 4 6 7.4 6 10.5A6 6 0 0 1 6 13.5C6 10.4 9 7 12 3Z"/></svg>
+            <h3>Humidifica el aire</h3>
+            <p>Niebla ultrasónica fría que suaviza el ambiente seco de casa.</p>
+          </article>
+          <article class="benefit-card reveal">
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c8 1 13-4 14-14C10 5.5 5.5 10 5 19Z"/><path d="M5 19c2-4 5-7 9-9"/></svg>
+            <h3>Aromaterapia</h3>
+            <p>Difunde tus aceites esenciales en una brisa aromática.</p>
+          </article>
+          <article class="benefit-card reveal">
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/></svg>
+            <h3>Silencio total</h3>
+            <p>Funciona en un susurro. Perfecto para dormir o concentrarte.</p>
+          </article>
+          <article class="benefit-card reveal">
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3Z"/><path d="M9 12l2 2 4-4"/></svg>
+            <h3>Apagado seguro</h3>
+            <p>Se apaga solo al quedarse sin agua. Tranquilidad total.</p>
+          </article>
+          <article class="benefit-card reveal">
+            <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+            <h3>Mando y temporizador</h3>
+            <p>Ajusta luz, niebla y horas sin levantarte del sofá.</p>
+          </article>
+        </div>
       </div>
     </section>
 
-    <section id="ritual" class="section">
+    <section id="ritual" class="section section-ritual">
       <div class="section-inner">
-        <h2>El ritual</h2>
-        <p class="section-placeholder">Enciende, respira, deja que la luz haga el resto. Un momento tuyo, cada día.</p>
+        <span class="eyebrow reveal">TU MOMENTO</span>
+        <h2 class="reveal">El ritual</h2>
+        <div class="ritual-copy">
+          <p class="reveal">“Al final del día, enciendes tu luz. La llama sube despacio, el aroma se abre, y la casa cambia de temperatura sin tocar el termostato.”</p>
+          <p class="reveal">“No es un aparato más: es la señal de que el día se cierra y tu momento empieza. Enciende, respira, descansa.”</p>
+        </div>
       </div>
     </section>
 
     <section id="comprar" class="section section-buy">
       <div class="section-inner">
-        <h2>Enciende tu luz</h2>
-        <p class="section-placeholder">Noor — el difusor de aroma con llama LED.</p>
-        <div class="hero-purchase">
-          <span class="hero-price">59,99&nbsp;€</span>
-          <a href="#comprar" class="btn-cta">Comprar ahora</a>
+        <span class="eyebrow reveal">ENCIENDE TU LUZ</span>
+        <h2 class="reveal">Llévate tu Noor</h2>
+
+        <div class="buy-panel reveal">
+          <span class="buy-price">59,99&nbsp;€</span>
+
+          <ul class="buy-includes">
+            <li><svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l4.5 4.5L20 6"/></svg> Difusor Noor</li>
+            <li><svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l4.5 4.5L20 6"/></svg> Mando a distancia</li>
+            <li><svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l4.5 4.5L20 6"/></svg> Cable USB</li>
+            <li><svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l4.5 4.5L20 6"/></svg> Guía de uso</li>
+          </ul>
+
+          <!-- CTA de compra: apunta a "#" de momento. Cuando exista la tienda,
+               sustituir por la URL de checkout de Shopify (p. ej. el enlace
+               a /cart o a la página de producto de la tienda Shopify). -->
+          <a href="#" class="btn-cta btn-cta--buy">Comprar ahora</a>
+
+          <div class="trust-row">
+            <span class="trust-item">
+              <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="12" height="10" rx="1.5"/><path d="M15 10h3l3 3v4h-6"/><circle cx="7.5" cy="19" r="1.4"/><circle cx="17.5" cy="19" r="1.4"/></svg>
+              Envío a toda España
+            </span>
+            <span class="trust-item">
+              <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v4h4"/></svg>
+              14 días para devolver
+            </span>
+            <span class="trust-item">
+              <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3Z"/></svg>
+              Pago seguro
+            </span>
+          </div>
+
+          <p class="buy-note">Marca recién nacida, sin reseñas infladas. Si no te enamora, te devolvemos el dinero en 14 días.</p>
         </div>
       </div>
     </section>
   </main>
+
+  <footer id="site-footer" class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="footer-logo">NOOR</span>
+        <span class="footer-tagline">Enciende tu luz.</span>
+      </div>
+      <nav class="footer-links" aria-label="Enlaces de pie de página">
+        <a href="#">Contacto</a>
+        <a href="#">Envíos y devoluciones</a>
+        <a href="#">Aviso legal</a>
+      </nav>
+      <p class="footer-copy">© 2026 Noor</p>
+    </div>
+  </footer>
 
   <script type="module" src="/src/main.js"></script>
 </body>

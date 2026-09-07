@@ -10,6 +10,7 @@
   --glow-1:   #FFE7C4;
   --glow-2:   #F0824E;
   --glow-3:   #E8674C;
+  --ink-line: #2c2633;
 
   --font-display: 'Playfair Display', serif;
   --font-body: 'Inter', sans-serif;
@@ -219,17 +220,328 @@ body {
   color: var(--hueso);
 }
 
-.section-placeholder {
+.section-buy {
+  padding-bottom: 16vh;
+}
+
+.section-inner--wide {
+  max-width: 68rem;
+}
+
+/* Aparición suave al hacer scroll: estado de reposo visible por defecto
+   (así funciona sin JS / con prefers-reduced-motion), y main.js anima
+   hacia opacity:1 al entrar en viewport — mismo patrón que el hero. */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--glow-2);
+}
+
+.section-intro {
   font-family: var(--font-body);
   font-weight: 300;
   color: var(--taupe);
   font-size: 1rem;
   line-height: 1.6;
+  max-width: 34rem;
   margin: 0;
 }
 
-.section-buy {
-  padding-bottom: 16vh;
+.icon-line {
+  width: 28px;
+  height: 28px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--glow-2);
+}
+
+/* ---------------------------------------------------------------------- */
+/* #como-funciona — pasos                                                  */
+/* ---------------------------------------------------------------------- */
+
+.steps-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  width: 100%;
+}
+
+.step {
+  flex: 1 1 220px;
+  max-width: 300px;
+  text-align: left;
+  background: rgba(29, 24, 34, 0.4);
+  border: 1px solid var(--ink-line);
+  border-radius: 18px;
+  padding: 1.75rem 1.5rem;
+  backdrop-filter: blur(6px);
+}
+
+.step-number {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.6rem;
+  color: var(--glow-2);
+  margin-bottom: 0.6rem;
+}
+
+.step-title {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--hueso);
+}
+
+.step-line {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--taupe);
+}
+
+.steps-note {
+  margin-top: 2rem;
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.8rem;
+  color: var(--taupe);
+}
+
+/* ---------------------------------------------------------------------- */
+/* #beneficios — grid de tarjetas                                          */
+/* ---------------------------------------------------------------------- */
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  width: 100%;
+  text-align: left;
+}
+
+.benefit-card {
+  background: rgba(29, 24, 34, 0.4);
+  border: 1px solid var(--ink-line);
+  border-radius: 18px;
+  padding: 1.75rem 1.5rem;
+  backdrop-filter: blur(6px);
+}
+
+.benefit-card .icon-line {
+  margin-bottom: 1rem;
+}
+
+.benefit-card h3 {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--hueso);
+}
+
+.benefit-card p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--taupe);
+}
+
+/* ---------------------------------------------------------------------- */
+/* #ritual — copy editorial                                                */
+/* ---------------------------------------------------------------------- */
+
+.ritual-copy {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  align-items: center;
+}
+
+.ritual-copy p {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(1.2rem, 2.6vw, 1.6rem);
+  line-height: 1.65;
+  color: var(--hueso);
+  max-width: 60ch;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------- */
+/* #comprar — panel de compra                                              */
+/* ---------------------------------------------------------------------- */
+
+.buy-panel {
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4rem;
+  background: rgba(20, 16, 25, 0.72);
+  border: 1px solid var(--ink-line);
+  border-radius: 22px;
+  padding: 2.5rem 2rem;
+  backdrop-filter: blur(12px);
+}
+
+.buy-price {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 2.4rem;
+  color: var(--hueso);
+}
+
+.buy-includes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  text-align: left;
+}
+
+.buy-includes li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.95rem;
+  color: var(--hueso);
+}
+
+.buy-includes .icon-line {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.78rem;
+  color: var(--taupe);
+}
+
+.trust-item .icon-line {
+  width: 16px;
+  height: 16px;
+}
+
+.buy-note {
+  margin: 0;
+  max-width: 26rem;
+  text-align: center;
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.78rem;
+  color: var(--taupe);
+}
+
+/* ---------------------------------------------------------------------- */
+/* FOOTER                                                                   */
+/* ---------------------------------------------------------------------- */
+
+.site-footer {
+  position: relative;
+  z-index: 1;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+  border-top: 1px solid var(--ink-line);
+}
+
+.footer-inner {
+  max-width: 40rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.footer-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-size: 1.1rem;
+  color: var(--hueso);
+}
+
+.footer-tagline {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.82rem;
+  color: var(--taupe);
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.footer-links a {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--taupe);
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: var(--hueso);
+}
+
+.footer-copy {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--taupe);
+  opacity: 0.7;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -240,6 +552,18 @@ body {
   .hero-logo { width: 200px; }
   .hero-purchase { gap: 1rem; }
   .btn-cta { padding: 0.8rem 1.75rem; font-size: 0.78rem; }
+}
+
+@media (max-width: 900px) {
+  .benefits-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .benefits-grid { grid-template-columns: 1fr; }
+  .steps-row { flex-direction: column; align-items: stretch; }
+  .step { max-width: none; }
+  .buy-panel { padding: 2rem 1.5rem; }
+  .trust-row { flex-direction: column; align-items: center; gap: 0.75rem; }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -255,5 +579,9 @@ body {
   }
   .scroll-line {
     animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
   }
 }

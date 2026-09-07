@@ -86,3 +86,27 @@ if (prefersReducedMotion) {
       0.75 // también solapada con la animación anterior
     );
 }
+
+// ---------------------------------------------------------------------------
+// Reveal de las secciones de contenido al hacer scroll (eyebrows, títulos,
+// tarjetas, panel de compra…). Parte de un estado visible por CSS/noscript;
+// no toca el Lenis ni el ScrollTrigger del hero de arriba.
+// ---------------------------------------------------------------------------
+const revealEls = gsap.utils.toArray('.reveal');
+
+if (prefersReducedMotion) {
+  gsap.set(revealEls, { opacity: 1, y: 0 });
+} else {
+  ScrollTrigger.batch(revealEls, {
+    start: 'top 88%',
+    once: true,
+    onEnter: (batch) =>
+      gsap.to(batch, {
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        ease: 'noorReveal',
+        stagger: 0.12,
+      }),
+  });
+}
