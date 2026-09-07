@@ -46,7 +46,7 @@
 
         <div class="hero-purchase">
           <span class="hero-price">59,99&nbsp;€</span>
-          <a href="#comprar" class="btn-cta">Comprar ahora</a>
+          <a href="#comprar" class="btn-cta" data-checkout-link>Comprar ahora</a>
         </div>
       </div>
 
@@ -152,10 +152,9 @@
             <li><svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l4.5 4.5L20 6"/></svg> Guía de uso</li>
           </ul>
 
-          <!-- CTA de compra: apunta a "#" de momento. Cuando exista la tienda,
-               sustituir por la URL de checkout de Shopify (p. ej. el enlace
-               a /cart o a la página de producto de la tienda Shopify). -->
-          <a href="#" class="btn-cta btn-cta--buy">Comprar ahora</a>
+          <!-- El href real (checkout de Shopify) lo asigna main.js desde
+               CHECKOUT_URL; este "#" es solo el fallback antes de que cargue el JS. -->
+          <a href="#" class="btn-cta btn-cta--buy" data-checkout-link>Comprar ahora</a>
 
           <div class="trust-row">
             <span class="trust-item">

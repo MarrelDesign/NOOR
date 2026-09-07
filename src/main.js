@@ -110,3 +110,13 @@ if (prefersReducedMotion) {
       }),
   });
 }
+
+// ---------------------------------------------------------------------------
+// CTA de compra → checkout de Shopify (botón del hero y de #comprar)
+// ---------------------------------------------------------------------------
+// URL de checkout de Shopify — cambiar aquí si cambia el producto/variante
+const CHECKOUT_URL = 'https://f0mm5w-yn.myshopify.com/cart/55282723357001:1';
+
+document.querySelectorAll('[data-checkout-link]').forEach((link) => {
+  link.href = CHECKOUT_URL;
+});
