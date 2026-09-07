@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es-ES">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noor — Enciende tu luz.</title>
+  <meta name="description" content="Noor. Una llama viva, sin fuego. El ritual de calma para tu casa." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+  <noscript>
+    <style>
+      .hero-logo, .hero-subtitle, .hero-purchase, .line-inner { opacity: 1 !important; transform: none !important; }
+    </style>
+  </noscript>
+</head>
+<body>
+  <!-- Canvas Three.js: fijo detrás de todo el contenido -->
+  <canvas id="scene-canvas"></canvas>
+
+  <main id="content">
+    <!-- HERO -->
+    <section id="hero" class="hero">
+      <div class="hero-inner">
+        <div class="hero-logo" aria-hidden="false">
+          <svg viewBox="0 0 1200 300" aria-label="Noor" class="logo-svg">
+            <defs>
+              <radialGradient id="haze" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#F0824E" stop-opacity="0"/><stop offset="55%" stop-color="#F0824E" stop-opacity=".2"/><stop offset="100%" stop-color="#F0824E" stop-opacity="0"/></radialGradient>
+              <filter id="soft" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="13"/></filter>
+              <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE7C4"/><stop offset="100%" stop-color="#F19A5C"/></linearGradient>
+            </defs>
+            <circle cx="525" cy="150" r="130" fill="url(#haze)"/><circle cx="675" cy="150" r="130" fill="url(#haze)"/>
+            <g fill="none" stroke="#F5934F" stroke-width="24" filter="url(#soft)" opacity=".9"><circle cx="525" cy="150" r="61"/><circle cx="675" cy="150" r="61"/></g>
+            <g font-family="'Playfair Display',serif" font-size="185" fill="#F6EFE6" text-anchor="middle" font-weight="600"><text x="375" y="211">N</text><text x="825" y="211">R</text></g>
+            <g fill="none" stroke="url(#rg)" stroke-width="13"><circle cx="525" cy="150" r="61"/><circle cx="675" cy="150" r="61"/></g>
+          </svg>
+        </div>
+
+        <h1 class="hero-title">
+          <span class="line-mask"><span class="line-inner">Enciende</span></span>
+          <span class="line-mask"><span class="line-inner">tu luz.</span></span>
+        </h1>
+
+        <p class="hero-subtitle">Una llama viva, sin fuego. El ritual de calma para tu casa.</p>
+
+        <div class="hero-purchase">
+          <span class="hero-price">59,99&nbsp;€</span>
+          <a href="#comprar" class="btn-cta">Comprar ahora</a>
+        </div>
+      </div>
+
+      <div class="scroll-indicator">
+        <span>DESLIZA</span>
+        <span class="scroll-line"></span>
+      </div>
+    </section>
+
+    <!-- SECCIONES (esqueleto, se rellenan después) -->
+    <section id="como-funciona" class="section">
+      <div class="section-inner">
+        <h2>Cómo funciona</h2>
+        <p class="section-placeholder">Una llama de luz viva se enciende sobre una niebla suave. Sin fuego, sin humo real: solo calma.</p>
+      </div>
+    </section>
+
+    <section id="beneficios" class="section">
+      <div class="section-inner">
+        <h2>Por qué Noor</h2>
+        <p class="section-placeholder">Diseño atemporal, materiales cálidos y un ritual diario que transforma tu espacio.</p>
+      </div>
+    </section>
+
+    <section id="ritual" class="section">
+      <div class="section-inner">
+        <h2>El ritual</h2>
+        <p class="section-placeholder">Enciende, respira, deja que la luz haga el resto. Un momento tuyo, cada día.</p>
+      </div>
+    </section>
+
+    <section id="comprar" class="section section-buy">
+      <div class="section-inner">
+        <h2>Enciende tu luz</h2>
+        <p class="section-placeholder">Noor — el difusor de aroma con llama LED.</p>
+        <div class="hero-purchase">
+          <span class="hero-price">59,99&nbsp;€</span>
+          <a href="#comprar" class="btn-cta">Comprar ahora</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

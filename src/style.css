@@ -1,0 +1,259 @@
+/* ==========================================================================
+   NOOR — tokens de marca + layout
+   ========================================================================== */
+
+:root {
+  --ink:      #141019;
+  --ink-soft: #1d1822;
+  --hueso:    #F6EFE6;
+  --taupe:    #C9BEB2;
+  --glow-1:   #FFE7C4;
+  --glow-2:   #F0824E;
+  --glow-3:   #E8674C;
+
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+
+  --ease-noor: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+  color: var(--hueso);
+  font-family: var(--font-body);
+  font-weight: 400;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--glow-2);
+  color: var(--ink);
+}
+
+#scene-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  display: block;
+}
+
+#content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------------- */
+/* HERO                                                                    */
+/* ---------------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6vh 1.5rem 4vh;
+}
+
+.hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  max-width: 44rem;
+}
+
+.hero-logo {
+  width: 260px;
+  margin-bottom: 0.5rem;
+  opacity: 0;
+}
+
+.hero-subtitle,
+.hero-purchase {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.logo-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hero-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-style: italic;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  line-height: 1.05;
+  color: var(--hueso);
+}
+
+.line-mask {
+  display: block;
+  overflow: hidden;
+}
+
+.line-inner {
+  display: block;
+  transform: translateY(0);
+}
+
+.hero-subtitle {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: var(--taupe);
+  max-width: 30rem;
+  margin: 0;
+}
+
+.hero-purchase {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hero-price {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--hueso);
+}
+
+.btn-cta {
+  display: inline-block;
+  padding: 0.9rem 2.25rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--glow-1), var(--glow-2) 55%, var(--glow-3));
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  transition: transform 0.4s var(--ease-noor), box-shadow 0.4s var(--ease-noor);
+  box-shadow: 0 8px 30px -8px rgba(240, 130, 78, 0.55);
+}
+
+.btn-cta:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 40px -8px rgba(240, 130, 78, 0.7);
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.scroll-indicator span:first-child {
+  font-size: 0.7rem;
+  letter-spacing: 0.24em;
+  color: var(--taupe);
+  text-transform: uppercase;
+}
+
+.scroll-line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--taupe), transparent);
+  animation: scroll-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes scroll-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------- */
+/* SECCIONES                                                               */
+/* ---------------------------------------------------------------------- */
+
+.section {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10vh 1.5rem;
+  text-align: center;
+}
+
+.section-inner {
+  max-width: 38rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin: 0;
+  color: var(--hueso);
+}
+
+.section-placeholder {
+  font-family: var(--font-body);
+  font-weight: 300;
+  color: var(--taupe);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.section-buy {
+  padding-bottom: 16vh;
+}
+
+/* ---------------------------------------------------------------------- */
+/* RESPONSIVE                                                              */
+/* ---------------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .hero-logo { width: 200px; }
+  .hero-purchase { gap: 1rem; }
+  .btn-cta { padding: 0.8rem 1.75rem; font-size: 0.78rem; }
+}
+
+/* ---------------------------------------------------------------------- */
+/* ACCESIBILIDAD                                                           */
+/* ---------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .scroll-line {
+    animation: none;
+  }
+}

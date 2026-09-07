@@ -1,0 +1,7 @@
+Aquí va diffuser.glb (todavía no existe).
+
+El GLTFLoader en src/scene.js intenta cargar '/models/diffuser.glb' automáticamente;
+si el archivo no está, cae de forma segura en la primitiva placeholder (LatheGeometry).
+
+Cuando tengas el modelo real, colócalo en esta carpeta como "diffuser.glb" y se cargará
+sin tocar nada más.
