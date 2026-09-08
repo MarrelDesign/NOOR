@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
@@ -20,14 +21,23 @@ const COLORS = {
 // ---------------------------------------------------------------------------
 const MODEL = {
   path: '/models/diffuser.glb',
-  height: 2.35, // altura final del difusor en unidades de escena
+  height: 2.9, // altura final del difusor en unidades de escena — grande, con presencia
+  groupY: -0.35, // altura del "suelo" del grupo (sube/baja el difusor entero en pantalla)
   restRotationY: Math.PI / 6, // orientación de reposo: 3/4 hacia cámara
   bodyColor: 0x1c1b1f,
-  bodyRoughness: 0.55,
-  bodyMetalness: 0.25,
+  bodyRoughness: 0.35, // más pulido: capta los reflejos del environment
+  bodyMetalness: 0.4, // más metálico: sin esto, un objeto negro se pierde sobre fondo negro
   logColor: 0x3a332c,
   glassColor: 0x0d0c10,
   glassOpacity: 0.3,
+};
+
+// Encuadre de cámara del hero — separado de MODEL para poder tunear la
+// composición (qué tan "subido" y con cuánto aire respira el difusor) sin
+// tocar la escala del modelo.
+const HERO_CAMERA = {
+  restPosition: new THREE.Vector3(0, 1.3, 6.4),
+  target: new THREE.Vector3(0, 1.05, 0),
 };
 
 function buildBodyMaterial() {
@@ -128,92 +138,69 @@ function buildDiffuserPrimitive() {
 }
 
 // ---------------------------------------------------------------------------
-// Llama procedural (ShaderMaterial): 3 planos cruzados con flicker orgánico
-// y degradado --glow-1 → --glow-2 → --glow-3.
+// Llama (sprite con textura de gradiente radial suave): NUNCA geometría con
+// bordes rectos — toda la silueta la define el alpha, siempre difuminado.
+// El flicker orgánico se anima en JS sobre scale/opacity (ver render()).
 // ---------------------------------------------------------------------------
-const flameVertexShader = /* glsl */ `
-  uniform float uTime;
-  varying vec2 vUv;
+function makeFlameTexture() {
+  const w = 128;
+  const h = 200;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
 
-  // ruido pseudo-orgánico barato (sin dependencias externas)
-  float hash(float n) { return fract(sin(n) * 43758.5453123); }
+  const drawBlob = (cx, cy, r, colorStops) => {
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    colorStops.forEach(([offset, color]) => gradient.addColorStop(offset, color));
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+  };
 
-  void main() {
-    vUv = uv;
-    vec3 pos = position;
+  ctx.globalCompositeOperation = 'lighter'; // funde las capas sin costuras duras
 
-    // estrechamiento hacia la punta de la llama
-    float taper = smoothstep(0.0, 1.0, uv.y);
-    pos.x *= mix(1.0, 0.15, taper);
+  // capa exterior cálida-roja, ancha en la base
+  drawBlob(w / 2, h * 0.74, w * 0.62, [
+    [0, 'rgba(232,103,76,0.5)'],
+    [0.6, 'rgba(232,103,76,0.2)'],
+    [1, 'rgba(232,103,76,0)'],
+  ]);
+  // capa media naranja
+  drawBlob(w / 2, h * 0.56, w * 0.44, [
+    [0, 'rgba(240,130,78,0.7)'],
+    [0.6, 'rgba(240,130,78,0.28)'],
+    [1, 'rgba(240,130,78,0)'],
+  ]);
+  // núcleo cálido-pálido, pequeño y alto — nunca blanco puro (evita el blowout)
+  drawBlob(w / 2, h * 0.34, w * 0.24, [
+    [0, 'rgba(255,231,196,0.85)'],
+    [0.6, 'rgba(255,231,196,0.3)'],
+    [1, 'rgba(255,231,196,0)'],
+  ]);
 
-    // ondulación orgánica lateral (mezcla de senos desfasados + hash)
-    float sway = sin(uTime * 2.2 + pos.y * 3.0) * 0.06
-               + sin(uTime * 5.3 + pos.y * 6.0) * 0.025
-               + (hash(floor(uTime * 6.0)) - 0.5) * 0.02;
-    pos.x += sway * uv.y;
-    pos.z += cos(uTime * 1.7 + pos.y * 2.5) * 0.04 * uv.y;
-
-    // la punta "respira" ligeramente en altura
-    pos.y += sin(uTime * 3.1) * 0.03 * taper;
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`;
-
-const flameFragmentShader = /* glsl */ `
-  uniform float uTime;
-  uniform vec3 uGlow1;
-  uniform vec3 uGlow2;
-  uniform vec3 uGlow3;
-  varying vec2 vUv;
-
-  void main() {
-    // degradado vertical: base cálida-roja -> naranja -> punta pálida
-    vec3 color = mix(uGlow3, uGlow2, smoothstep(0.0, 0.55, vUv.y));
-    color = mix(color, uGlow1, smoothstep(0.55, 1.0, vUv.y));
-
-    // silueta: se desvanece en los bordes laterales y en la punta
-    float edge = 1.0 - smoothstep(0.15, 0.5, abs(vUv.x - 0.5));
-    float tip = 1.0 - smoothstep(0.75, 1.0, vUv.y);
-    float base = smoothstep(0.0, 0.08, vUv.y);
-
-    // parpadeo suave y orgánico de intensidad global
-    float flicker = 0.85 + 0.15 * sin(uTime * 9.0) * sin(uTime * 3.3 + 1.0);
-
-    float alpha = edge * tip * base * flicker;
-    gl_FragColor = vec4(color, alpha);
-  }
-`;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+}
 
 function buildFlame() {
-  const group = new THREE.Group();
-  const geometry = new THREE.PlaneGeometry(0.5, 1.05, 1, 24);
-  geometry.translate(0, 0.525, 0); // pivote en la base de la llama
-
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uGlow1: { value: new THREE.Color(COLORS.glow1) },
-      uGlow2: { value: new THREE.Color(COLORS.glow2) },
-      uGlow3: { value: new THREE.Color(COLORS.glow3) },
-    },
-    vertexShader: flameVertexShader,
-    fragmentShader: flameFragmentShader,
+  const material = new THREE.SpriteMaterial({
+    map: makeFlameTexture(),
     transparent: true,
     depthWrite: false,
-    side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending,
+    opacity: 0.85,
   });
 
-  // 3 planos cruzados a 60° para dar volumen sin billboarding real
-  for (let i = 0; i < 3; i++) {
-    const plane = new THREE.Mesh(geometry, material);
-    plane.rotation.y = (Math.PI / 3) * i;
-    group.add(plane);
-  }
-
-  group.userData.material = material;
-  return group;
+  const sprite = new THREE.Sprite(material);
+  sprite.center.set(0.5, 0.02); // pivote casi en la base: crece hacia arriba desde la ranura
+  sprite.scale.set(0.6, 0.95, 1); // pequeña y controlada
+  sprite.userData.material = material;
+  sprite.userData.baseScale = sprite.scale.clone();
+  sprite.userData.baseOpacity = material.opacity;
+  return sprite;
 }
 
 // ---------------------------------------------------------------------------
@@ -311,8 +298,8 @@ export function initScene(canvas) {
     0.1,
     100
   );
-  const cameraRestPosition = new THREE.Vector3(0, 1.5, 5.6);
-  const cameraTarget = new THREE.Vector3(0, 1.25, 0);
+  const cameraRestPosition = HERO_CAMERA.restPosition.clone();
+  const cameraTarget = HERO_CAMERA.target.clone();
   camera.position.copy(cameraRestPosition);
   camera.lookAt(cameraTarget);
 
@@ -327,20 +314,36 @@ export function initScene(canvas) {
   renderer.toneMappingExposure = 1.0;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
+  // --- Environment de estudio (solo para reflejos, NO como fondo) -----------
+  // Un cuerpo negro (#1c1b1f) sobre un fondo casi negro (#141019) es ilegible
+  // sin algo que reflejar: un env map de estudio genérico (sin archivos
+  // externos) le da a los bordes metálicos el brillo que revela su forma.
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  const envRenderTarget = pmremGenerator.fromScene(new RoomEnvironment(), 0.04);
+  scene.environment = envRenderTarget.texture;
+  pmremGenerator.dispose();
+
   // --- Iluminación -----------------------------------------------------
   const ambient = new THREE.AmbientLight(0x342b3a, 0.55);
   scene.add(ambient);
 
-  const flameLight = new THREE.PointLight(COLORS.glow2, 6.5, 8, 2);
+  const flameLight = new THREE.PointLight(COLORS.glow2, 4.5, 8, 2);
   scene.add(flameLight);
 
-  const rimLight = new THREE.DirectionalLight(0x6a5a72, 0.4);
-  rimLight.position.set(-3, 4, -2);
+  // Key light: cálida, desde arriba-frente — dibuja la silueta y la lectura
+  // de volumen del cuerpo del difusor.
+  const keyLight = new THREE.DirectionalLight(0xfff1de, 1.3);
+  keyLight.position.set(2.2, 5, 4);
+  scene.add(keyLight);
+
+  // Rim light: fría/neutra, detrás — recorta el difusor contra el fondo.
+  const rimLight = new THREE.DirectionalLight(0x9db3d9, 0.9);
+  rimLight.position.set(-2.5, 3.5, -3.8);
   scene.add(rimLight);
 
   // --- Difusor -----------------------------------------------------------
   const diffuserGroup = new THREE.Group();
-  diffuserGroup.position.y = -0.9;
+  diffuserGroup.position.y = MODEL.groupY;
   diffuserGroup.rotation.y = MODEL.restRotationY;
   scene.add(diffuserGroup);
 
@@ -433,9 +436,9 @@ export function initScene(canvas) {
 
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.65, // strength — moderado, solo realza la llama
+    0.55, // strength — moderado, solo realza la llama y los reflejos cálidos
     0.45, // radius
-    0.78  // threshold — alto: evita que el difusor/niebla exploten a blanco
+    0.82  // threshold — alto: evita que el difusor/niebla exploten a blanco
   );
   composer.addPass(bloomPass);
 
@@ -465,8 +468,17 @@ export function initScene(canvas) {
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
 
-    flame.userData.material.uniforms.uTime.value = t;
     mist.userData.material.uniforms.uTime.value = t;
+
+    // flicker orgánico de la llama: escala + opacidad, nunca la silueta
+    // (que siempre es el gradiente suave de la textura)
+    const flicker = 0.85 + 0.15 * Math.sin(t * 9.0) * Math.sin(t * 3.3 + 1.0);
+    flame.userData.material.opacity = flame.userData.baseOpacity * flicker;
+    flame.scale.set(
+      flame.userData.baseScale.x * (0.94 + 0.06 * Math.sin(t * 2.4)),
+      flame.userData.baseScale.y * (0.97 + 0.05 * Math.sin(t * 3.1 + 0.6)),
+      1
+    );
 
     // rotación idle lenta (base) + rotación extra por scroll (amortiguada)
     const idleSpeed = prefersReducedMotion ? 0.02 : 0.08;
@@ -482,7 +494,7 @@ export function initScene(canvas) {
       cameraRestPosition.y - scrollProgress * 0.35,
       cameraRestPosition.z - scrollProgress * 1.8
     );
-    cameraTargetLook.set(0, 1.25 + scrollProgress * 0.25, 0);
+    cameraTargetLook.set(0, cameraTarget.y + scrollProgress * 0.25, 0);
 
     if (prefersReducedMotion) {
       // movimiento esencial reducido: sin dolly de scroll, cámara en reposo
