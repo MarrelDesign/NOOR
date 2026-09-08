@@ -1,37 +1,27 @@
-PROYECTO: "noor" (ya existe). El difusor .glb ya se carga en el hero, pero hay 3 problemas a arreglar. NO toques copy, secciones, CTA (checkout Shopify), footer ni el scroll suave (Lenis). Confirma git limpio; si no, commitea antes.
-
-PROBLEMAS OBSERVADOS (en pantalla):
-1. El difusor NO SE VE: es negro sobre fondo #141019 casi negro y se pierde. Falta iluminación/reflejos que revelen su forma.
-2. Queda demasiado abajo y tapado por el titular y el CTA.
-3. La "llama" salió como un CONO NARANJA DURO (parece un cono de tráfico), no una llama.
+PROYECTO: "noor" (ya existe). El difusor del hero AHORA SE VE, pero está mal calibrado: (1) es GIGANTE y pegado a la cámara — llena toda la pantalla como una losa; (2) los reflejos del environment lo pusieron BLANCO/GRIS en vez de negro premium. Ajuste de calibración. NO toques copy, secciones, CTA, footer ni scroll. Confirma git limpio antes.
 
 ──────────────────────────────────────────
-ARREGLOS
+AJUSTES
 ──────────────────────────────────────────
-1) HACER VISIBLE EL DIFUSOR (lo más importante) — un objeto negro necesita reflejos para leerse:
-   - Añade un ENVIRONMENT de reflejos SIN archivos externos: importa RoomEnvironment de 'three/examples/jsm/environments/RoomEnvironment.js' y PMREMGenerator; genera el envMap y asígnalo a scene.environment (NO como background, el fondo sigue siendo #141019).
-   - Sube la reflectividad del cuerpo para que capte esos reflejos: MeshStandardMaterial del cuerpo con metalness ~0.4, roughness ~0.35, color #1c1b1f. Ahora el negro brillará en los bordes y se verá la forma.
-   - Añade una KEY LIGHT direccional cálida desde arriba-frente (intensidad moderada) y una RIM LIGHT (luz de contra) fría/neutra detrás del difusor para recortar su silueta contra el fondo. Debe leerse CLARAMENTE como un objeto sólido premium, no desaparecer.
+1) ESCALA Y ENCUADRE (lo principal):
+   - Reduce el tamaño del difusor y/o aleja la cámara hasta que se vea el DIFUSOR ENTERO, centrado, con AIRE alrededor (espacio vacío arriba, abajo y a los lados) — como un producto en un escaparate, NO ocupando toda la pantalla.
+   - Como referencia: que el difusor ocupe aprox. el 40-55% de la altura del viewport y quede centrado (o ligeramente hacia arriba para dejar sitio al titular). Debe verse la caja completa con sus patas y la ranura superior.
+   - Revisa MODEL.height y la posición/distancia de la cámara (fov y position.z). Ajusta hasta que encuadre bien en desktop.
 
-2) COMPOSICIÓN — que el difusor sea el protagonista VISIBLE:
-   - Súbelo y encuádralo para que se vea entero y con aire (ajusta MODEL.height, su posición Y y/o la posición de la cámara). Que NO quede tapado por el CTA ni el titular.
-   - Puede ir detrás del texto, pero tiene que verse el producto. Si hace falta, baja un poco la cámara o sube el modelo para centrarlo en el hero.
+2) MATERIAL DEL CUERPO — que vuelva a ser NEGRO PREMIUM (ahora está blanco por exceso de reflejo):
+   - Baja envMapIntensity del material del cuerpo a ~0.3-0.4 (reflejos SUTILES, no espejo).
+   - Cuerpo: color #1c1b1f, metalness ~0.2, roughness ~0.45. Debe verse carbón/negro oscuro con brillos cálidos suaves en los bordes, NO una losa gris/blanca.
+   - Mantén el environment SOLO para reflejos (scene.environment), nunca como background (el fondo sigue #141019).
 
-3) ARREGLAR LA LLAMA (ahora es un cono duro):
-   - Sustituye ese cono por una llama/vapor SUAVE: un sprite o plano con gradiente radial suave y transparencia real (blending additive), flicker orgánico, saliendo de la ranura superior (nodo mist_slot). Bordes difuminados que se disipan hacia arriba, NUNCA un cono sólido de borde nítido.
-   - Pequeña y CONTROLADA — sin bola blanca ni cono naranja. Mejor sutil y elegante.
-   - MANTÉN las partículas de niebla sutiles que ya gustan.
+3) Comprueba que la LLAMA sigue saliendo de la ranura superior a la escala correcta del modelo ya reducido (reposiciónala/reescálala si hace falta para que sea proporcionada y salga del hueco de arriba). Pequeña y suave, sin cono ni blowout.
 
-4) BLOOM: ajústalo para que brille solo el calor de la llama y los reflejos cálidos, sin quemar a blanco y sin cono duro. Threshold alto.
+4) Mantén: rotación idle + scroll con damp, rim light, partículas de niebla sutiles.
 
 ──────────────────────────────────────────
-NO TOQUES
+RESTRICCIONES
 ──────────────────────────────────────────
-Copy, títulos, precio, CTA, secciones, footer, scroll suave, logo del hero.
-
-RESTRICCIONES:
 - Vanilla JS + Vite + Three.js. Sin React. No uses el navegador para verificar — reporta y yo verifico con capturas.
 - `rm -rf dist && npm run build`, reporta errores.
-- Commit: "hero: difusor visible con environment de estudio + rim light + llama suave".
+- Commit: "hero: calibrar escala/encuadre del difusor + reflejos sutiles (negro premium)".
 
-REPORTA: parámetros para tunear rápido (intensidad key/rim light, metalness/roughness del cuerpo, MODEL.height/posición, tamaño/opacidad de la llama, bloom threshold/strength).
+REPORTA los valores finales de: MODEL.height, cámara (fov, position.z), envMapIntensity, metalness/roughness del cuerpo, y posición/escala de la llama — para poder afinar rápido luego.
