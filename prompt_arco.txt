@@ -1,99 +1,37 @@
-PROYECTO: "noor" — landing 3D premium de UN solo producto (difusor de aroma con llama LED) para la marca Noor. Web cinematográfica con el producto en 3D y scroll suave, estilo TTR. Este es el SCAFFOLD (montaje base + hero 3D vivo). Trabaja de forma autocontenida: no asumas contexto previo, todo lo necesario está aquí.
+PROYECTO: "noor" (ya existe). Tarea: sustituir el difusor PLACEHOLDER del hero por el MODELO 3D REAL y darle acabado premium. No toques el copy, las secciones, el CTA ni el scroll suave. Confirma git limpio antes; si no, commitea.
+
+El modelo ya está en /public/models/diffuser.glb (hecho por código, ~844 caras, muy ligero). Es una chimenea-difusor rectangular: cuerpo/marco oscuro, ventana frontal con cristal semitransparente (material glass con alphaMode BLEND), troncos dentro, 4 patas, y una RANURA en la cara superior (por ahí sale la niebla). El modelo mira hacia +Z (frente), Y es arriba.
 
 ──────────────────────────────────────────
-STACK Y ESTRUCTURA
+QUÉ HACER
 ──────────────────────────────────────────
-- Vite (vanilla JS, SIN framework), Three.js, GSAP + ScrollTrigger, Lenis (scroll suave). Deploy final: estático (Netlify).
-- Three.js con imports de examples/jsm para GLTFLoader y postprocesado (EffectComposer, UnrealBloomPass, RenderPass). Fija versión de three en package.json.
-- Estructura de archivos:
-  index.html
-  /src/main.js        (arranque: Lenis + GSAP + monta la escena)
-  /src/scene.js       (toda la escena Three.js del hero)
-  /src/style.css      (tokens de marca + layout)
-  /public/models/     (aquí irá diffuser.glb — todavía no existe; ver PLACEHOLDER)
-- Idioma del sitio: español (es-ES). Moneda: EUR. Precio del producto: 59,99 €.
+1) CARGAR EL MODELO: usa el GLTFLoader ya preparado para cargar '/public/models/diffuser.glb'. Elimina/oculta la primitiva placeholder. Centra el modelo y escálalo para que tenga presencia en el hero (que ocupe una buena porción vertical, sin cortarse). Oriéntalo mirando a cámara (frente +Z hacia el espectador), ligeramente en 3/4 para que se le vea volumen. Si el GLB no carga (404), que caiga al placeholder sin romper.
+
+2) MATERIALES (acabado premium):
+   - CUERPO/MARCO y PATAS: MeshStandardMaterial oscuro premium (color ~#1c1b1f, roughness ~0.55, metalness ~0.25). Debe captar los reflejos cálidos de la llama.
+   - CRISTAL (la pieza "glass"): mantenlo transparente/oscuro (opacity ~0.25-0.35, transparent:true, o usa transmission si usas MeshPhysicalMaterial) para que se vean los TRONCOS detrás.
+   - TRONCOS: material oscuro carbón (~#3a332c) que se ilumine en cálido con la luz de la llama.
+   Identifica cada pieza por el nombre de nodo del GLB (frame_*, glass, log_*, foot_*, mist_slot) al recorrer la escena con traverse().
+
+3) LLAMA + NIEBLA saliendo de la RANURA SUPERIOR:
+   - Coloca la llama procedural y las partículas de niebla justo encima de la ranura superior del modelo (nodo "mist_slot", centro-arriba). La niebla/llama debe nacer de ahí, no flotar en un punto aleatorio.
+   - MANTÉN las partículas sutiles actuales (las que ya gustan). Sobre ellas, añade una llama pequeña, cálida y CONTROLADA (degradado #FFE7C4→#F0824E→#E8674C), con parpadeo suave. IMPORTANTE: pequeña y sin blowout — nada de bola de fuego blanca (ya pasó una vez). Que sea un resplandor cálido elegante, no un incendio.
+
+4) LUZ: una point light cálida (color #F0824E) situada dentro/encima de la ranura, que ilumine el interior (troncos + cristal) y el frente del cuerpo con un brillo cálido. Ambient tenue. Opcional rim light por detrás para separar del fondo #141019.
+
+5) MOVIMIENTO: rotación idle lenta del difusor; al hacer scroll, rota un poco más y la cámara hace un dolly suave (siempre con lerp/damp, nunca set directo). Ease custom con nombre.
+
+6) BLOOM: ajústalo para que resplandezca solo la llama y el brillo cálido interior, sin quemar a blanco. Threshold alto.
 
 ──────────────────────────────────────────
-MARCA NOOR (tokens exactos)
+NO TOQUES
 ──────────────────────────────────────────
-Colores:
-  --ink:      #141019   (fondo principal / lienzo del hero)
-  --ink-soft: #1d1822
-  --hueso:    #F6EFE6   (texto y fondos claros)
-  --taupe:    #C9BEB2   (texto secundario)
-  --glow-1:   #FFE7C4   } gradiente de resplandor (llama, halos, CTA)
-  --glow-2:   #F0824E   }  acento principal = --glow-2
-  --glow-3:   #E8674C   }
-Tipografía (Google Fonts): Playfair Display (600/700, e itálica) para titulares; Inter (300/400/600) para cuerpo y etiquetas. Etiquetas en MAYÚSCULAS con letter-spacing ~.24em.
-Tagline: "Enciende tu luz."
-Voz: cálida, sensorial, sin claims médicos ni de salud (NUNCA "cura estrés/ansiedad"; hablamos de ambiente, ritual y calma).
+Copy, títulos, precio, CTA (checkout de Shopify), secciones, footer, scroll suave (Lenis), logo del hero.
 
-Logo (SVG inline, úsalo tal cual en el hero — las "oo" son halos de luz):
-<svg viewBox="0 0 1200 300" aria-label="Noor">
-  <defs>
-    <radialGradient id="haze" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#F0824E" stop-opacity="0"/><stop offset="55%" stop-color="#F0824E" stop-opacity=".2"/><stop offset="100%" stop-color="#F0824E" stop-opacity="0"/></radialGradient>
-    <filter id="soft" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="13"/></filter>
-    <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE7C4"/><stop offset="100%" stop-color="#F19A5C"/></linearGradient>
-  </defs>
-  <circle cx="525" cy="150" r="130" fill="url(#haze)"/><circle cx="675" cy="150" r="130" fill="url(#haze)"/>
-  <g fill="none" stroke="#F5934F" stroke-width="24" filter="url(#soft)" opacity=".9"><circle cx="525" cy="150" r="61"/><circle cx="675" cy="150" r="61"/></g>
-  <g font-family="'Playfair Display',serif" font-size="185" fill="#F6EFE6" text-anchor="middle" font-weight="600"><text x="375" y="211">N</text><text x="825" y="211">R</text></g>
-  <g fill="none" stroke="url(#rg)" stroke-width="13"><circle cx="525" cy="150" r="61"/><circle cx="675" cy="150" r="61"/></g>
-</svg>
+RESTRICCIONES:
+- Vanilla JS + Vite + Three.js (usa GLTFLoader de examples/jsm). Sin React.
+- NO uses el navegador para verificar — reporta y yo verifico con capturas.
+- `rm -rf dist && npm run build`, reporta errores.
+- Commit al terminar: "hero: cargar difusor .glb real + materiales premium + llama desde la ranura".
 
-──────────────────────────────────────────
-TAREA — SCAFFOLD + HERO 3D
-──────────────────────────────────────────
-1) Inicializa el proyecto Vite vanilla e instala: three, gsap, lenis. Configura Lenis conectado a GSAP ScrollTrigger (scrollerProxy / raf) para scroll suave global.
-
-2) CSS global: define los tokens como variables, fondo --ink, carga las fuentes de Google Fonts, tipografía base Inter. Diseña para móvil también (responsive). Respeta prefers-reduced-motion (desactiva animaciones no esenciales).
-
-3) CANVAS Three.js a pantalla completa, FIJO detrás del contenido (position:fixed; z-index:0). El contenido HTML va por encima (z-index:1). La escena del hero contiene:
-   a. DIFUSOR (placeholder): una primitiva con forma de difusor —un cuerpo tipo urna/cilindro con hombros redondeados (usa LatheGeometry o un cilindro con top redondeado)— material mate oscuro (casi negro, PBR: metalness baja, roughness alta). Centrado. IMPORTANTE: implementa un GLTFLoader que INTENTE cargar '/models/diffuser.glb'; si no existe (404), usa la primitiva como fallback SIN romper. Deja el punto de carga claramente comentado para cambiarlo por el modelo real luego.
-   b. LLAMA procedural encima de la boca del difusor: ShaderMaterial custom (o sistema de partículas GPU) con una llama animada, degradado --glow-1 → --glow-2 → --glow-3, parpadeo suave y orgánico. Es el foco de luz de la escena.
-   c. NIEBLA que sube: sistema de partículas translúcidas de baja opacidad que ascienden lentamente y se disipan (mist/vapor). Sutil, no denso.
-   d. Iluminación: una point light cálida (color --glow-2) cerca de la llama que ilumina el difusor, más una ambient tenue. Fondo --ink.
-   e. Postprocesado: EffectComposer + UnrealBloomPass para el resplandor de la llama. TUNEA el bloom (threshold alto, strength/radius moderados) para que NO haya blowout a blanco/naranja quemado. Es el error más común: evítalo.
-   f. Movimiento: rotación idle lenta del difusor. Al hacer scroll del hero a la siguiente sección, el difusor rota un poco más y la cámara hace un dolly suave. SIEMPRE lerp/damp de la posición y el target de la cámara (nunca set directo desde el progreso de scroll). Usa un ease custom con nombre (no los defaults de GSAP).
-
-4) CONTENIDO DOM del hero (sobre el canvas), centrado, primer frame visible sin scroll:
-   - El logo SVG de arriba (ancho ~360px).
-   - H1 en Playfair Display: "Enciende tu luz." con reveal por máscara (líneas que suben desde overflow:hidden, GSAP), desde un estado de reposo visible.
-   - Subtítulo (Inter, --taupe): "Una llama viva, sin fuego. El ritual de calma para tu casa."
-   - Fila: precio "59,99 €" + botón CTA "Comprar ahora" (fondo con gradiente de resplandor, texto --ink; href="#comprar" de momento — luego conectará al checkout de Shopify).
-   - Indicador de scroll abajo ("DESLIZA").
-
-5) Debajo del hero, crea los ESQUELETOS de secciones (vacías pero con título real, id y espaciado correcto, para rellenar después):
-   #como-funciona  → "Cómo funciona"
-   #beneficios     → "Por qué Noor"
-   #ritual         → "El ritual"
-   #comprar        → "Enciende tu luz" (bloque de compra)
-   Cada una: padding generoso, título en Playfair, un párrafo placeholder corto. Nada de lorem largo.
-
-──────────────────────────────────────────
-GRAMÁTICA PREMIUM (obligatorio)
-──────────────────────────────────────────
-- Bloom controlado, sin blowout a blanco/naranja.
-- Escala audaz: el difusor y la llama con presencia, no tímidos.
-- Cámara siempre con lerp/damp; nunca set directo por scroll.
-- Eases custom con nombre, consistentes.
-- Reveal de titular por máscara.
-- Render estable durante el scroll (sin shimmer/jitter).
-- Timelines solapadas (B empieza antes de que A termine), no secuenciales.
-
-──────────────────────────────────────────
-RESTRICCIONES
-──────────────────────────────────────────
-- Vanilla JS + Vite. NADA de React.
-- NO uses el navegador para verificar — reporta los cambios, yo verifico visualmente.
-- Git: haz `git init` y un commit inicial tras el scaffold, y OTRO commit cuando el hero funcione. Confirma `git status` limpio antes de terminar.
-- Compila con `rm -rf dist && npm run build` y reporta cualquier error.
-- No inventes reseñas, ni contadores de stock, ni claims de salud.
-
-──────────────────────────────────────────
-REPORTA AL TERMINAR
-──────────────────────────────────────────
-- Que `npm run dev` arranca y `npm run build` compila sin errores.
-- Lista de archivos creados.
-- La línea exacta donde se carga '/models/diffuser.glb' para cambiar el modelo real luego.
-- Recordatorio de dónde conectará el CTA al checkout de Shopify.
+REPORTA: parámetros clave que pueda tunear rápido (escala del modelo, tamaño/intensidad de la llama, opacidad del cristal, intensidad de la point light, bloom threshold/strength).
