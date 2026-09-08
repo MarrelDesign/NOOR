@@ -24,10 +24,10 @@ const MODEL = {
   height: 2.0, // altura final del difusor en unidades de escena — producto en escaparate, no losa
   groupY: 0.0, // altura del "suelo" del grupo (sube/baja el difusor entero en pantalla)
   restRotationY: Math.PI / 6, // orientación de reposo: 3/4 hacia cámara
-  bodyColor: 0x1a191d,
-  bodyRoughness: 0.6,
-  bodyMetalness: 0.15,
-  bodyEnvMapIntensity: 0.15, // MUY bajo — más alto y el negro se lava a gris/blanco
+  bodyColor: 0x141217,
+  bodyRoughness: 0.7,
+  bodyMetalness: 0.1,
+  bodyEnvMapIntensity: 0.08, // casi nada — el cuerpo depende de las luces, no del entorno
   logColor: 0x3a332c,
   glassColor: 0x0d0c10,
   glassOpacity: 0.3,
@@ -46,9 +46,12 @@ const HERO_CAMERA = {
 // proporcionada automáticamente si se retoca la escala del modelo.
 const FLAME_SCALE = { width: 0.21, height: 0.33 };
 
+// Crea SIEMPRE una instancia nueva (nunca se reutiliza ni se comparte con el
+// material que traía el .glb) — cada malla del cuerpo recibe su propio
+// MeshStandardMaterial forzado a negro carbón.
 function buildBodyMaterial() {
   return new THREE.MeshStandardMaterial({
-    color: MODEL.bodyColor,
+    color: new THREE.Color(MODEL.bodyColor),
     roughness: MODEL.bodyRoughness,
     metalness: MODEL.bodyMetalness,
     envMapIntensity: MODEL.bodyEnvMapIntensity,
@@ -63,7 +66,7 @@ function buildLogMaterial() {
   });
 }
 
-function buildGlassMaterial() {
+function buildGlassMaterial(envMap) {
   return new THREE.MeshPhysicalMaterial({
     color: MODEL.glassColor,
     roughness: 0.12,
@@ -72,6 +75,8 @@ function buildGlassMaterial() {
     opacity: MODEL.glassOpacity,
     depthWrite: false,
     side: THREE.DoubleSide,
+    envMap: envMap ?? null, // reflejo de estudio SOLO en el cristal, nunca global
+    envMapIntensity: 0.6,
   });
 }
 
@@ -318,20 +323,20 @@ export function initScene(canvas) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 0.9;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  // --- Environment de estudio (solo para reflejos, NO como fondo) -----------
-  // Un cuerpo negro (#1c1b1f) sobre un fondo casi negro (#141019) es ilegible
-  // sin algo que reflejar: un env map de estudio genérico (sin archivos
-  // externos) le da a los bordes metálicos el brillo que revela su forma.
+  // --- Environment de estudio: SOLO para el cristal, nunca global ---------
+  // Un scene.environment global ilumina también el cuerpo vía IBL y es lo
+  // que lo lavaba a gris/blanco. El cuerpo debe depender solo de las luces;
+  // el env map de estudio se asigna a mano únicamente al material del
+  // cristal (ver glassMaterial.envMap más abajo).
   const pmremGenerator = new THREE.PMREMGenerator(renderer);
   const envRenderTarget = pmremGenerator.fromScene(new RoomEnvironment(), 0.04);
-  scene.environment = envRenderTarget.texture;
   pmremGenerator.dispose();
 
   // --- Iluminación -----------------------------------------------------
-  const ambient = new THREE.AmbientLight(0x342b3a, 0.55);
+  const ambient = new THREE.AmbientLight(0x342b3a, 0.25); // MUY tenue
   scene.add(ambient);
 
   const flameLight = new THREE.PointLight(COLORS.glow2, 4.5, 8, 2);
@@ -396,9 +401,8 @@ export function initScene(canvas) {
         -((box.min.z + box.max.z) / 2) * scale
       );
 
-      const bodyMaterial = buildBodyMaterial();
       const logMaterial = buildLogMaterial();
-      const glassMaterial = buildGlassMaterial();
+      const glassMaterial = buildGlassMaterial(envRenderTarget.texture);
 
       model.traverse((node) => {
         if (!node.isMesh) return;
@@ -413,7 +417,9 @@ export function initScene(canvas) {
         } else if (node.name === 'mist_slot') {
           node.visible = false; // marcador de la ranura, no se renderiza
         } else {
-          node.material = bodyMaterial; // frame_*, foot_*, back_wall, btn_*
+          // frame_*, foot_*, back_wall, btn_* — material NUEVO por malla,
+          // nunca el que traía el .glb ni una instancia compartida.
+          node.material = buildBodyMaterial();
         }
       });
 
