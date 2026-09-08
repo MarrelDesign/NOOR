@@ -42,6 +42,15 @@ requestAnimationFrame(loop);
 
 // El hero conduce el progreso de scroll (0→1) hacia la escena 3D; la escena
 // misma se encarga de amortiguar (damp/lerp) cualquier cambio de cámara.
+//
+// El mismo progreso también desvanece el <canvas> 3D (difusor + llama +
+// niebla) a opacidad 0: el difusor protagoniza SOLO el hero — al llegar a la
+// primera sección (bottom top del hero) el canvas ya es invisible y las
+// secciones siguientes quedan sobre el fondo negro (#content, z-index 1).
+// El fade se retrasa hasta CANVAS_FADE_START para que el difusor se vea a
+// pleno mientras el hero está en pantalla, y solo se apague en su tramo final.
+const CANVAS_FADE_START = 0.5;
+
 ScrollTrigger.create({
   trigger: '#hero',
   start: 'top top',
@@ -49,6 +58,12 @@ ScrollTrigger.create({
   scrub: true,
   onUpdate: (self) => {
     noorScene.setScrollProgress(self.progress);
+
+    const fadeP =
+      self.progress <= CANVAS_FADE_START
+        ? 0
+        : (self.progress - CANVAS_FADE_START) / (1 - CANVAS_FADE_START);
+    canvas.style.opacity = String(1 - fadeP);
   },
 });
 

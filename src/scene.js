@@ -24,10 +24,10 @@ const MODEL = {
   height: 2.0, // altura final del difusor en unidades de escena — producto en escaparate, no losa
   groupY: 0.0, // altura del "suelo" del grupo (sube/baja el difusor entero en pantalla)
   restRotationY: Math.PI / 6, // orientación de reposo: 3/4 hacia cámara
-  bodyColor: 0x1c1b1f,
-  bodyRoughness: 0.45,
-  bodyMetalness: 0.2,
-  bodyEnvMapIntensity: 0.35, // reflejos SUTILES — más alto y el negro se lava a gris/blanco
+  bodyColor: 0x1a191d,
+  bodyRoughness: 0.6,
+  bodyMetalness: 0.15,
+  bodyEnvMapIntensity: 0.15, // MUY bajo — más alto y el negro se lava a gris/blanco
   logColor: 0x3a332c,
   glassColor: 0x0d0c10,
   glassOpacity: 0.3,
@@ -339,7 +339,7 @@ export function initScene(canvas) {
 
   // Key light: cálida, desde arriba-frente — dibuja la silueta y la lectura
   // de volumen del cuerpo del difusor.
-  const keyLight = new THREE.DirectionalLight(0xfff1de, 1.3);
+  const keyLight = new THREE.DirectionalLight(0xfff1de, 1.0);
   keyLight.position.set(2.2, 5, 4);
   scene.add(keyLight);
 
