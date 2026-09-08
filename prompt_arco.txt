@@ -1,37 +1,37 @@
-PROYECTO: "noor" (ya existe). Tarea: sustituir el difusor PLACEHOLDER del hero por el MODELO 3D REAL y darle acabado premium. No toques el copy, las secciones, el CTA ni el scroll suave. Confirma git limpio antes; si no, commitea.
+PROYECTO: "noor" (ya existe). El difusor .glb ya se carga en el hero, pero hay 3 problemas a arreglar. NO toques copy, secciones, CTA (checkout Shopify), footer ni el scroll suave (Lenis). Confirma git limpio; si no, commitea antes.
 
-El modelo ya está en /public/models/diffuser.glb (hecho por código, ~844 caras, muy ligero). Es una chimenea-difusor rectangular: cuerpo/marco oscuro, ventana frontal con cristal semitransparente (material glass con alphaMode BLEND), troncos dentro, 4 patas, y una RANURA en la cara superior (por ahí sale la niebla). El modelo mira hacia +Z (frente), Y es arriba.
+PROBLEMAS OBSERVADOS (en pantalla):
+1. El difusor NO SE VE: es negro sobre fondo #141019 casi negro y se pierde. Falta iluminación/reflejos que revelen su forma.
+2. Queda demasiado abajo y tapado por el titular y el CTA.
+3. La "llama" salió como un CONO NARANJA DURO (parece un cono de tráfico), no una llama.
 
 ──────────────────────────────────────────
-QUÉ HACER
+ARREGLOS
 ──────────────────────────────────────────
-1) CARGAR EL MODELO: usa el GLTFLoader ya preparado para cargar '/public/models/diffuser.glb'. Elimina/oculta la primitiva placeholder. Centra el modelo y escálalo para que tenga presencia en el hero (que ocupe una buena porción vertical, sin cortarse). Oriéntalo mirando a cámara (frente +Z hacia el espectador), ligeramente en 3/4 para que se le vea volumen. Si el GLB no carga (404), que caiga al placeholder sin romper.
+1) HACER VISIBLE EL DIFUSOR (lo más importante) — un objeto negro necesita reflejos para leerse:
+   - Añade un ENVIRONMENT de reflejos SIN archivos externos: importa RoomEnvironment de 'three/examples/jsm/environments/RoomEnvironment.js' y PMREMGenerator; genera el envMap y asígnalo a scene.environment (NO como background, el fondo sigue siendo #141019).
+   - Sube la reflectividad del cuerpo para que capte esos reflejos: MeshStandardMaterial del cuerpo con metalness ~0.4, roughness ~0.35, color #1c1b1f. Ahora el negro brillará en los bordes y se verá la forma.
+   - Añade una KEY LIGHT direccional cálida desde arriba-frente (intensidad moderada) y una RIM LIGHT (luz de contra) fría/neutra detrás del difusor para recortar su silueta contra el fondo. Debe leerse CLARAMENTE como un objeto sólido premium, no desaparecer.
 
-2) MATERIALES (acabado premium):
-   - CUERPO/MARCO y PATAS: MeshStandardMaterial oscuro premium (color ~#1c1b1f, roughness ~0.55, metalness ~0.25). Debe captar los reflejos cálidos de la llama.
-   - CRISTAL (la pieza "glass"): mantenlo transparente/oscuro (opacity ~0.25-0.35, transparent:true, o usa transmission si usas MeshPhysicalMaterial) para que se vean los TRONCOS detrás.
-   - TRONCOS: material oscuro carbón (~#3a332c) que se ilumine en cálido con la luz de la llama.
-   Identifica cada pieza por el nombre de nodo del GLB (frame_*, glass, log_*, foot_*, mist_slot) al recorrer la escena con traverse().
+2) COMPOSICIÓN — que el difusor sea el protagonista VISIBLE:
+   - Súbelo y encuádralo para que se vea entero y con aire (ajusta MODEL.height, su posición Y y/o la posición de la cámara). Que NO quede tapado por el CTA ni el titular.
+   - Puede ir detrás del texto, pero tiene que verse el producto. Si hace falta, baja un poco la cámara o sube el modelo para centrarlo en el hero.
 
-3) LLAMA + NIEBLA saliendo de la RANURA SUPERIOR:
-   - Coloca la llama procedural y las partículas de niebla justo encima de la ranura superior del modelo (nodo "mist_slot", centro-arriba). La niebla/llama debe nacer de ahí, no flotar en un punto aleatorio.
-   - MANTÉN las partículas sutiles actuales (las que ya gustan). Sobre ellas, añade una llama pequeña, cálida y CONTROLADA (degradado #FFE7C4→#F0824E→#E8674C), con parpadeo suave. IMPORTANTE: pequeña y sin blowout — nada de bola de fuego blanca (ya pasó una vez). Que sea un resplandor cálido elegante, no un incendio.
+3) ARREGLAR LA LLAMA (ahora es un cono duro):
+   - Sustituye ese cono por una llama/vapor SUAVE: un sprite o plano con gradiente radial suave y transparencia real (blending additive), flicker orgánico, saliendo de la ranura superior (nodo mist_slot). Bordes difuminados que se disipan hacia arriba, NUNCA un cono sólido de borde nítido.
+   - Pequeña y CONTROLADA — sin bola blanca ni cono naranja. Mejor sutil y elegante.
+   - MANTÉN las partículas de niebla sutiles que ya gustan.
 
-4) LUZ: una point light cálida (color #F0824E) situada dentro/encima de la ranura, que ilumine el interior (troncos + cristal) y el frente del cuerpo con un brillo cálido. Ambient tenue. Opcional rim light por detrás para separar del fondo #141019.
-
-5) MOVIMIENTO: rotación idle lenta del difusor; al hacer scroll, rota un poco más y la cámara hace un dolly suave (siempre con lerp/damp, nunca set directo). Ease custom con nombre.
-
-6) BLOOM: ajústalo para que resplandezca solo la llama y el brillo cálido interior, sin quemar a blanco. Threshold alto.
+4) BLOOM: ajústalo para que brille solo el calor de la llama y los reflejos cálidos, sin quemar a blanco y sin cono duro. Threshold alto.
 
 ──────────────────────────────────────────
 NO TOQUES
 ──────────────────────────────────────────
-Copy, títulos, precio, CTA (checkout de Shopify), secciones, footer, scroll suave (Lenis), logo del hero.
+Copy, títulos, precio, CTA, secciones, footer, scroll suave, logo del hero.
 
 RESTRICCIONES:
-- Vanilla JS + Vite + Three.js (usa GLTFLoader de examples/jsm). Sin React.
-- NO uses el navegador para verificar — reporta y yo verifico con capturas.
+- Vanilla JS + Vite + Three.js. Sin React. No uses el navegador para verificar — reporta y yo verifico con capturas.
 - `rm -rf dist && npm run build`, reporta errores.
-- Commit al terminar: "hero: cargar difusor .glb real + materiales premium + llama desde la ranura".
+- Commit: "hero: difusor visible con environment de estudio + rim light + llama suave".
 
-REPORTA: parámetros clave que pueda tunear rápido (escala del modelo, tamaño/intensidad de la llama, opacidad del cristal, intensidad de la point light, bloom threshold/strength).
+REPORTA: parámetros para tunear rápido (intensidad key/rim light, metalness/roughness del cuerpo, MODEL.height/posición, tamaño/opacidad de la llama, bloom threshold/strength).
