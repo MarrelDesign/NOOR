@@ -14,6 +14,50 @@ const COLORS = {
   glow3: 0xe8674c,
 };
 
+// ---------------------------------------------------------------------------
+// Difusor real (.glb): parámetros ajustables de encaje, orientación y
+// materiales. Todo lo que se pueda tunear rápido vive aquí.
+// ---------------------------------------------------------------------------
+const MODEL = {
+  path: '/models/diffuser.glb',
+  height: 2.35, // altura final del difusor en unidades de escena
+  restRotationY: Math.PI / 6, // orientación de reposo: 3/4 hacia cámara
+  bodyColor: 0x1c1b1f,
+  bodyRoughness: 0.55,
+  bodyMetalness: 0.25,
+  logColor: 0x3a332c,
+  glassColor: 0x0d0c10,
+  glassOpacity: 0.3,
+};
+
+function buildBodyMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: MODEL.bodyColor,
+    roughness: MODEL.bodyRoughness,
+    metalness: MODEL.bodyMetalness,
+  });
+}
+
+function buildLogMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: MODEL.logColor,
+    roughness: 0.85,
+    metalness: 0,
+  });
+}
+
+function buildGlassMaterial() {
+  return new THREE.MeshPhysicalMaterial({
+    color: MODEL.glassColor,
+    roughness: 0.12,
+    metalness: 0,
+    transparent: true,
+    opacity: MODEL.glassOpacity,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+}
+
 /**
  * damp: interpolación exponencial independiente del framerate (Lerp/Smoothing
  * "a la Unity/Framer"). Usada SIEMPRE para mover la cámara — nunca se asigna
@@ -77,13 +121,7 @@ function buildDiffuserPrimitive() {
   const geometry = new THREE.LatheGeometry(profile, 96);
   geometry.scale(1.25, 1.25, 1.25);
 
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x0b090c,
-    metalness: 0.15,
-    roughness: 0.75,
-  });
-
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, buildBodyMaterial());
   mesh.castShadow = false;
   mesh.receiveShadow = false;
   return mesh;
@@ -294,7 +332,6 @@ export function initScene(canvas) {
   scene.add(ambient);
 
   const flameLight = new THREE.PointLight(COLORS.glow2, 6.5, 8, 2);
-  flameLight.position.set(0, 2.0, 0.3);
   scene.add(flameLight);
 
   const rimLight = new THREE.DirectionalLight(0x6a5a72, 0.4);
@@ -304,46 +341,91 @@ export function initScene(canvas) {
   // --- Difusor -----------------------------------------------------------
   const diffuserGroup = new THREE.Group();
   diffuserGroup.position.y = -0.9;
+  diffuserGroup.rotation.y = MODEL.restRotationY;
   scene.add(diffuserGroup);
 
   const primitive = buildDiffuserPrimitive();
   diffuserGroup.add(primitive);
 
-  // Punto de carga del modelo real: reemplaza esta ruta cuando exista
-  // /public/models/diffuser.glb. Si falla (404 en dev, o el archivo no
-  // existe todavía), se conserva la primitiva de fallback sin romper nada.
-  const loader = new GLTFLoader();
-  loader.load(
-    '/models/diffuser.glb',
-    (gltf) => {
-      diffuserGroup.remove(primitive);
-      const model = gltf.scene;
-      model.traverse((node) => {
-        if (node.isMesh) {
-          node.castShadow = false;
-          node.receiveShadow = false;
-        }
-      });
-      diffuserGroup.add(model);
-    },
-    undefined,
-    () => {
-      // 404 esperado mientras no exista el .glb real: mantenemos la primitiva.
-      console.info('[noor] diffuser.glb no encontrado todavía — usando primitiva placeholder.');
-    }
-  );
-
-  // --- Llama ---------------------------------------------------------------
+  // --- Llama y niebla --------------------------------------------------
+  // Posiciones por defecto (válidas para la primitiva placeholder); se
+  // reanclan a la ranura real ("mist_slot") en cuanto carga el .glb.
   const flame = buildFlame();
   flame.position.set(0, 1.5, 0);
   diffuserGroup.add(flame);
-  flameLight.position.set(0, 2.4, 0);
 
-  // --- Niebla ---------------------------------------------------------------
   const mistSprite = makeSoftDiscTexture();
   const mist = buildMist(mistSprite);
   mist.position.set(0, 1.55, 0);
   diffuserGroup.add(mist);
+
+  flameLight.position.set(0, 1.9, 0.15);
+
+  // Carga el modelo real. Si falla (404, archivo ausente), se conserva la
+  // primitiva de fallback y las posiciones por defecto de llama/niebla/luz
+  // sin romper nada.
+  const loader = new GLTFLoader();
+  loader.load(
+    MODEL.path,
+    (gltf) => {
+      diffuserGroup.remove(primitive);
+
+      const model = gltf.scene;
+
+      // Centra el modelo en X/Z y apoya su base en el suelo del grupo
+      // (y=0 local), escalándolo para que tenga la altura objetivo.
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const scale = MODEL.height / size.y;
+
+      model.scale.setScalar(scale);
+      model.position.set(
+        -((box.min.x + box.max.x) / 2) * scale,
+        -box.min.y * scale,
+        -((box.min.z + box.max.z) / 2) * scale
+      );
+
+      const bodyMaterial = buildBodyMaterial();
+      const logMaterial = buildLogMaterial();
+      const glassMaterial = buildGlassMaterial();
+
+      model.traverse((node) => {
+        if (!node.isMesh) return;
+        node.castShadow = false;
+        node.receiveShadow = false;
+
+        if (node.name === 'glass') {
+          node.material = glassMaterial;
+          node.renderOrder = 2; // dibuja el cristal después de los troncos
+        } else if (node.name.startsWith('log_')) {
+          node.material = logMaterial;
+        } else if (node.name === 'mist_slot') {
+          node.visible = false; // marcador de la ranura, no se renderiza
+        } else {
+          node.material = bodyMaterial; // frame_*, foot_*, back_wall, btn_*
+        }
+      });
+
+      diffuserGroup.add(model);
+      diffuserGroup.updateMatrixWorld(true);
+
+      // Ancla la llama, la niebla y la luz cálida a la ranura superior real.
+      const mistSlot = model.getObjectByName('mist_slot');
+      if (mistSlot) {
+        const slotWorld = mistSlot.getWorldPosition(new THREE.Vector3());
+        const slotLocal = diffuserGroup.worldToLocal(slotWorld.clone());
+        flame.position.copy(slotLocal);
+        mist.position.copy(slotLocal);
+        flameLight.position.copy(slotWorld).add(new THREE.Vector3(0, 0.15, 0));
+      }
+    },
+    undefined,
+    () => {
+      // 404 esperado si el .glb no está disponible: mantenemos la primitiva.
+      console.info('[noor] diffuser.glb no encontrado — usando primitiva placeholder.');
+    }
+  );
 
   // --- Postprocesado: bloom controlado (sin blowout) ------------------------
   const composer = new EffectComposer(renderer);
