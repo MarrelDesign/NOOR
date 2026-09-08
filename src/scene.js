@@ -21,12 +21,13 @@ const COLORS = {
 // ---------------------------------------------------------------------------
 const MODEL = {
   path: '/models/diffuser.glb',
-  height: 2.9, // altura final del difusor en unidades de escena — grande, con presencia
-  groupY: -0.35, // altura del "suelo" del grupo (sube/baja el difusor entero en pantalla)
+  height: 2.0, // altura final del difusor en unidades de escena — producto en escaparate, no losa
+  groupY: 0.0, // altura del "suelo" del grupo (sube/baja el difusor entero en pantalla)
   restRotationY: Math.PI / 6, // orientación de reposo: 3/4 hacia cámara
   bodyColor: 0x1c1b1f,
-  bodyRoughness: 0.35, // más pulido: capta los reflejos del environment
-  bodyMetalness: 0.4, // más metálico: sin esto, un objeto negro se pierde sobre fondo negro
+  bodyRoughness: 0.45,
+  bodyMetalness: 0.2,
+  bodyEnvMapIntensity: 0.35, // reflejos SUTILES — más alto y el negro se lava a gris/blanco
   logColor: 0x3a332c,
   glassColor: 0x0d0c10,
   glassOpacity: 0.3,
@@ -36,15 +37,21 @@ const MODEL = {
 // composición (qué tan "subido" y con cuánto aire respira el difusor) sin
 // tocar la escala del modelo.
 const HERO_CAMERA = {
-  restPosition: new THREE.Vector3(0, 1.3, 6.4),
-  target: new THREE.Vector3(0, 1.05, 0),
+  fov: 36,
+  restPosition: new THREE.Vector3(0, 1.3, 7.6),
+  target: new THREE.Vector3(0, 0.85, 0),
 };
+
+// Tamaño de la llama como fracción de MODEL.height, para que se mantenga
+// proporcionada automáticamente si se retoca la escala del modelo.
+const FLAME_SCALE = { width: 0.21, height: 0.33 };
 
 function buildBodyMaterial() {
   return new THREE.MeshStandardMaterial({
     color: MODEL.bodyColor,
     roughness: MODEL.bodyRoughness,
     metalness: MODEL.bodyMetalness,
+    envMapIntensity: MODEL.bodyEnvMapIntensity,
   });
 }
 
@@ -196,7 +203,7 @@ function buildFlame() {
 
   const sprite = new THREE.Sprite(material);
   sprite.center.set(0.5, 0.02); // pivote casi en la base: crece hacia arriba desde la ranura
-  sprite.scale.set(0.6, 0.95, 1); // pequeña y controlada
+  sprite.scale.set(MODEL.height * FLAME_SCALE.width, MODEL.height * FLAME_SCALE.height, 1); // pequeña, proporcional al modelo
   sprite.userData.material = material;
   sprite.userData.baseScale = sprite.scale.clone();
   sprite.userData.baseOpacity = material.opacity;
@@ -293,7 +300,7 @@ export function initScene(canvas) {
   scene.fog = new THREE.FogExp2(COLORS.ink, 0.045);
 
   const camera = new THREE.PerspectiveCamera(
-    36,
+    HERO_CAMERA.fov,
     window.innerWidth / window.innerHeight,
     0.1,
     100
