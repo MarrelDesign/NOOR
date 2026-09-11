@@ -1,27 +1,111 @@
-PROYECTO: "noor" (ya existe). El difusor del hero AHORA SE VE, pero está mal calibrado: (1) es GIGANTE y pegado a la cámara — llena toda la pantalla como una losa; (2) los reflejos del environment lo pusieron BLANCO/GRIS en vez de negro premium. Ajuste de calibración. NO toques copy, secciones, CTA, footer ni scroll. Confirma git limpio antes.
+CONTEXTO
+========
+Proyecto Noor. Repo ya inicializado con 10+ commits en main. Hay untracked files
+(ruido: imágenes generadas, carpetas de producto, etc.). Ahora: limpiar, commit
+final, y preparar para GitHub + Netlify.
 
-──────────────────────────────────────────
-AJUSTES
-──────────────────────────────────────────
-1) ESCALA Y ENCUADRE (lo principal):
-   - Reduce el tamaño del difusor y/o aleja la cámara hasta que se vea el DIFUSOR ENTERO, centrado, con AIRE alrededor (espacio vacío arriba, abajo y a los lados) — como un producto en un escaparate, NO ocupando toda la pantalla.
-   - Como referencia: que el difusor ocupe aprox. el 40-55% de la altura del viewport y quede centrado (o ligeramente hacia arriba para dejar sitio al titular). Debe verse la caja completa con sus patas y la ranura superior.
-   - Revisa MODEL.height y la posición/distancia de la cámara (fov y position.z). Ajusta hasta que encuadre bien en desktop.
+TAREA
+=====
+1. Ver qué archivos están sin rastrear (git status)
+2. Actualizar .gitignore para excluir el ruido (imágenes generadas, __pycache__,
+   carpetas de "producto", etc.)
+3. Hacer git add -A y verificar qué se va a commitear (git status nuevamente)
+4. Si hay cambios reales en src/, index.html, package.json, etc., hacer un commit
+   limpio con mensaje: "Clean: remove untracked files and finalize for deployment"
+5. Si NO hay cambios reales (solo limpieza de .gitignore), no necesitas commit
+6. Verificar que npm run build sigue funcionando
+7. Resumen: estado del repo, qué se limpió, si hizo commit o no
 
-2) MATERIAL DEL CUERPO — que vuelva a ser NEGRO PREMIUM (ahora está blanco por exceso de reflejo):
-   - Baja envMapIntensity del material del cuerpo a ~0.3-0.4 (reflejos SUTILES, no espejo).
-   - Cuerpo: color #1c1b1f, metalness ~0.2, roughness ~0.45. Debe verse carbón/negro oscuro con brillos cálidos suaves en los bordes, NO una losa gris/blanca.
-   - Mantén el environment SOLO para reflejos (scene.environment), nunca como background (el fondo sigue #141019).
+PASO A PASO
+===========
 
-3) Comprueba que la LLAMA sigue saliendo de la ranura superior a la escala correcta del modelo ya reducido (reposiciónala/reescálala si hace falta para que sea proporcionada y salga del hueco de arriba). Pequeña y suave, sin cono ni blowout.
+1. Estado actual
+   cd ~/noor
+   git status
+   (Muestra archivos tracked/untracked y cambios)
 
-4) Mantén: rotación idle + scroll con damp, rim light, partículas de niebla sutiles.
+2. Examina .gitignore (si existe)
+   cat .gitignore
+   (Si no existe, créalo. Si existe, añade las líneas que falten.)
 
-──────────────────────────────────────────
-RESTRICCIONES
-──────────────────────────────────────────
-- Vanilla JS + Vite + Three.js. Sin React. No uses el navegador para verificar — reporta y yo verifico con capturas.
-- `rm -rf dist && npm run build`, reporta errores.
-- Commit: "hero: calibrar escala/encuadre del difusor + reflejos sutiles (negro premium)".
+3. Actualiza .gitignore para excluir ruido
+   Asegúrate de que tenga:
+   node_modules/
+   dist/
+   .env
+   .DS_Store
+   *.log
+   __pycache__/
+   *.pyo
+   /producto/
+   /collage/
+   Gemini*
+   *generated*
+   .cache/
 
-REPORTA los valores finales de: MODEL.height, cámara (fov, position.z), envMapIntensity, metalness/roughness del cuerpo, y posición/escala de la llama — para poder afinar rápido luego.
+   Si algo falta:
+   cat >> .gitignore << 'EOF'
+   /producto/
+   /collage/
+   Gemini*
+   *generated*
+   EOF
+
+4. Verifica .gitignore está en git
+   git add .gitignore
+   git status
+   (Los archivos ruido ahora NO deben aparecer en "Changes to be committed", solo
+    en "Untracked files ignored".)
+
+5. Limpia cambios no deseados (si los hay)
+   Si hay cambios en archivos rastreados que NO quieres:
+   git checkout -- <archivo>
+
+6. Verifica qué se va a commitear
+   git status
+   (Debe mostrar solo cambios reales de src/, index.html, etc. NO ruido.)
+
+7. Commit (si hay cambios)
+   Si git status muestra "nothing to commit", no hagas nada.
+   Si hay cambios reales:
+   git add -A
+   git commit -m "Clean: finalize for Netlify deployment"
+
+8. Verifica build
+   npm run build
+   (Debe terminar sin errores. Luego limpia: rm -rf dist)
+
+9. Resumen
+   git log --oneline -5
+   git status
+   (Todo debe estar limpio, main up-to-date.)
+
+PASOS SIGUIENTES (manuales, fuera de aquí)
+===========================================
+
+A. Crea repo en GitHub:
+   https://github.com/new
+   - Nombre: noor
+   - Privado o público (para portfolio, público)
+   - NO inicies con README/gitignore (ya lo tienes)
+
+B. Conecta tu repo local:
+   git remote add origin https://github.com/TU_USUARIO/noor.git
+   git branch -M main
+   git push -u origin main
+   (Necesitarás un token de GitHub: Settings > Developer settings > Personal access
+    tokens > Tokens (classic) > Generate new token > repo full access.)
+
+C. Conecta a Netlify:
+   1. https://app.netlify.com > "New site from Git"
+   2. Autoriza GitHub, selecciona repo "noor"
+   3. Build settings (auto-detectados):
+      - Build: npm run build
+      - Publish: dist
+   4. Deploy
+   5. URL pública: https://noor-xxx.netlify.app (o tu dominio)
+
+FIN
+===
+Cuando todo esté limpio y pusheado a GitHub, para aquí y te daré los pasos de
+Netlify.

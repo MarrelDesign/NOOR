@@ -5,6 +5,31 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
+// Móvil: menos partículas de niebla y pixelRatio más bajo — el tráfico será
+// mayormente móvil (paso 4), y esto es lo único de la escena 3D que pesa en
+// gama baja durante el pin largo del hero.
+const IS_MOBILE = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches;
+
+// --- Ajuste de la llama y la niebla dentro de la chimenea ---
+// flameMistGroup vive en el centro-superior del modelo (ver más abajo); estos
+// offsets son relativos a ese punto de anclaje. En (0,0,0) la llama y la
+// niebla quedan justo en el origen del grupo, es decir arriba-centro.
+const FLAME_POS = { x: 0.0, y: 0.0, z: 0.0 };
+const FLAME_SCALE = 0.9; // tamaño de la llama (relativo al actual)
+const MIST_POS = { x: 0.0, y: 0.0, z: 0.0 };
+const MIST_SPREAD = { x: 1.6, y: 0.0, z: 0.25 }; // ancho del área de emisión de niebla
+// Altura que sube la niebla desde MIST_POS antes de reiniciar el ciclo (en
+// unidades de escena). Contenida cerca de la boca de la chimenea, no una
+// columna larga.
+const MIST_RISE_HEIGHT = 0.9;
+
+// --- Brillo cálido (familia ámbar-coral, paleta de marca) ------------------
+const FLAME_LIGHT_INTENSITY = 4.5; // intensidad base (antes del fade del hero, ver setFadeFactor)
+const FLAME_LIGHT_COLOR = 0xf0824e; // = COLORS.glow2, acento cálido de marca
+const BLOOM_STRENGTH = 0.55; // moderado, solo realza la llama y los reflejos cálidos
+const BLOOM_RADIUS = 0.45;
+const BLOOM_THRESHOLD = 0.82; // alto: evita que el difusor/niebla exploten a blanco
+
 // ---------------------------------------------------------------------------
 // Tokens de marca (deben coincidir con src/style.css)
 // ---------------------------------------------------------------------------
@@ -15,14 +40,25 @@ const COLORS = {
   glow3: 0xe8674c,
 };
 
+// Modelo optimizado (Meshy, texturizado).
+const MODEL_URL = '/models/diffuser_web.glb';
+
+// El trimesh viejo usa nodos con nombre (glass, log_*, mist_slot) y depende
+// de que se le fuercen materiales propios; el modelo Meshy trae sus propias
+// texturas horneadas y NUNCA debe recibir esos overrides de material.
+const APPLY_NAMED_MATERIAL_OVERRIDES = MODEL_URL === '/models/diffuser.glb';
+
+// Único número a tocar para agrandar/reducir el difusor en pantalla (altura
+// final en unidades de escena, tras auto-centrar y auto-escalar el modelo).
+const TARGET_HEIGHT = 3.0;
+
 // ---------------------------------------------------------------------------
 // Difusor real (.glb): parámetros ajustables de encaje, orientación y
 // materiales. Todo lo que se pueda tunear rápido vive aquí.
 // ---------------------------------------------------------------------------
 const MODEL = {
-  path: '/models/diffuser.glb',
-  height: 2.0, // altura final del difusor en unidades de escena — producto en escaparate, no losa
-  groupY: 0.0, // altura del "suelo" del grupo (sube/baja el difusor entero en pantalla)
+  path: MODEL_URL,
+  groupY: 0.35, // altura del "suelo" del grupo (sube/baja el difusor entero en pantalla)
   restRotationY: Math.PI / 6, // orientación de reposo: 3/4 hacia cámara
   bodyColor: 0x141217,
   bodyRoughness: 0.7,
@@ -42,9 +78,9 @@ const HERO_CAMERA = {
   target: new THREE.Vector3(0, 0.85, 0),
 };
 
-// Tamaño de la llama como fracción de MODEL.height, para que se mantenga
-// proporcionada automáticamente si se retoca la escala del modelo.
-const FLAME_SCALE = { width: 0.21, height: 0.33 };
+// Proporción (ancho/alto) del sprite de la llama como fracción de
+// TARGET_HEIGHT; FLAME_SCALE (arriba) escala esto relativamente.
+const FLAME_SPRITE_ASPECT = { width: 0.21, height: 0.33 };
 
 // Crea SIEMPRE una instancia nueva (nunca se reutiliza ni se comparte con el
 // material que traía el .glb) — cada malla del cuerpo recibe su propio
@@ -208,7 +244,11 @@ function buildFlame() {
 
   const sprite = new THREE.Sprite(material);
   sprite.center.set(0.5, 0.02); // pivote casi en la base: crece hacia arriba desde la ranura
-  sprite.scale.set(MODEL.height * FLAME_SCALE.width, MODEL.height * FLAME_SCALE.height, 1); // pequeña, proporcional al modelo
+  sprite.scale.set(
+    TARGET_HEIGHT * FLAME_SPRITE_ASPECT.width * FLAME_SCALE,
+    TARGET_HEIGHT * FLAME_SPRITE_ASPECT.height * FLAME_SCALE,
+    1
+  ); // pequeña, proporcional al modelo
   sprite.userData.material = material;
   sprite.userData.baseScale = sprite.scale.clone();
   sprite.userData.baseOpacity = material.opacity;
@@ -221,6 +261,7 @@ function buildFlame() {
 // ---------------------------------------------------------------------------
 const mistVertexShader = /* glsl */ `
   uniform float uTime;
+  uniform float uRiseHeight;
   attribute vec3 aRandom; // x: fase, y: velocidad, z: radio de deriva
   varying float vAlpha;
 
@@ -228,7 +269,7 @@ const mistVertexShader = /* glsl */ `
     float cycle = fract(uTime * (0.035 + aRandom.y * 0.03) + aRandom.x);
 
     float startY = 0.0;
-    float endY = 3.2;
+    float endY = uRiseHeight;
     float y = mix(startY, endY, cycle);
 
     float driftAngle = aRandom.x * 6.2831853 + uTime * 0.15;
@@ -247,25 +288,30 @@ const mistVertexShader = /* glsl */ `
 const mistFragmentShader = /* glsl */ `
   uniform sampler2D uSprite;
   uniform vec3 uColor;
+  uniform float uFade; // 1 = visible, 0 = invisible — mismo factor que el fade del hero
   varying float vAlpha;
 
   void main() {
     vec4 tex = texture2D(uSprite, gl_PointCoord);
-    gl_FragColor = vec4(uColor, tex.a * vAlpha);
+    gl_FragColor = vec4(uColor, tex.a * vAlpha * uFade);
   }
 `;
 
 function buildMist(sprite) {
-  const count = 220;
+  const count = IS_MOBILE ? 110 : 220; // la mitad en móvil — menos partículas, mismo aspecto de niebla
   const positions = new Float32Array(count * 3);
   const randoms = new Float32Array(count * 3);
 
   for (let i = 0; i < count; i++) {
+    // Distribución elíptica uniforme en área (sqrt del radio, no radio
+    // lineal) para no concentrar partículas en el centro — franja ancha en
+    // x y poco profunda en z, como vapor saliendo de la boca de la
+    // chimenea, no una columna estrecha de humo.
     const angle = Math.random() * Math.PI * 2;
-    const radius = Math.random() * 0.35;
-    positions[i * 3 + 0] = Math.cos(angle) * radius;
-    positions[i * 3 + 1] = 0;
-    positions[i * 3 + 2] = Math.sin(angle) * radius;
+    const radius = Math.sqrt(Math.random());
+    positions[i * 3 + 0] = Math.cos(angle) * radius * (MIST_SPREAD.x / 2);
+    positions[i * 3 + 1] = (Math.random() - 0.5) * MIST_SPREAD.y;
+    positions[i * 3 + 2] = Math.sin(angle) * radius * (MIST_SPREAD.z / 2);
 
     randoms[i * 3 + 0] = Math.random();
     randoms[i * 3 + 1] = Math.random();
@@ -281,6 +327,8 @@ function buildMist(sprite) {
       uTime: { value: 0 },
       uSprite: { value: sprite },
       uColor: { value: new THREE.Color(0xf6efe6) },
+      uRiseHeight: { value: MIST_RISE_HEIGHT },
+      uFade: { value: 1 },
     },
     vertexShader: mistVertexShader,
     fragmentShader: mistFragmentShader,
@@ -321,9 +369,9 @@ export function initScene(canvas) {
     powerPreference: 'high-performance',
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1.5 : 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.9;
+  renderer.toneMappingExposure = 1.2; // más luz general: el difusor debe leerse claro contra el fondo tinta, no fundirse en él
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   // --- Environment de estudio: SOLO para el cristal, nunca global ---------
@@ -336,15 +384,15 @@ export function initScene(canvas) {
   pmremGenerator.dispose();
 
   // --- Iluminación -----------------------------------------------------
-  const ambient = new THREE.AmbientLight(0x342b3a, 0.25); // MUY tenue
+  const ambient = new THREE.AmbientLight(0x342b3a, 0.4); // subido de 0.25: el difusor se perdía contra el fondo tinta
   scene.add(ambient);
 
-  const flameLight = new THREE.PointLight(COLORS.glow2, 4.5, 8, 2);
+  const flameLight = new THREE.PointLight(FLAME_LIGHT_COLOR, FLAME_LIGHT_INTENSITY, 8, 2);
   scene.add(flameLight);
 
   // Key light: cálida, desde arriba-frente — dibuja la silueta y la lectura
   // de volumen del cuerpo del difusor.
-  const keyLight = new THREE.DirectionalLight(0xfff1de, 1.0);
+  const keyLight = new THREE.DirectionalLight(0xfff1de, 1.3);
   keyLight.position.set(2.2, 5, 4);
   scene.add(keyLight);
 
@@ -363,18 +411,35 @@ export function initScene(canvas) {
   diffuserGroup.add(primitive);
 
   // --- Llama y niebla --------------------------------------------------
-  // Posiciones por defecto (válidas para la primitiva placeholder); se
-  // reanclan a la ranura real ("mist_slot") en cuanto carga el .glb.
+  // Colocación provisional en TARGET_HEIGHT/2 (techo aproximado) mientras
+  // carga el .glb real y no conocemos su altura escalada exacta; el loader
+  // de más abajo la reancla a la altura REAL del techo del modelo en cuanto
+  // carga. Al ser hijo de diffuserGroup, gira con la chimenea
+  // automáticamente (idle + scroll).
   const flame = buildFlame();
-  flame.position.set(0, 1.5, 0);
-  diffuserGroup.add(flame);
+  flame.position.set(FLAME_POS.x, FLAME_POS.y, FLAME_POS.z);
 
   const mistSprite = makeSoftDiscTexture();
   const mist = buildMist(mistSprite);
-  mist.position.set(0, 1.55, 0);
-  diffuserGroup.add(mist);
+  mist.position.set(MIST_POS.x, MIST_POS.y, MIST_POS.z);
 
-  flameLight.position.set(0, 1.9, 0.15);
+  const flameMistGroup = new THREE.Group();
+  flameMistGroup.add(flame);
+  flameMistGroup.add(mist);
+  flameMistGroup.position.set(0, TARGET_HEIGHT / 2, 0);
+  diffuserGroup.add(flameMistGroup);
+
+  // La luz de la llama no es hija de diffuserGroup (no debe heredar rotación
+  // del difusor), así que se posiciona en mundo a mano — pero SIGUE a la
+  // llama: se calcula desde flameMistGroup.position + FLAME_POS (el mismo
+  // punto donde queda la llama).
+  diffuserGroup.updateMatrixWorld(true);
+  const flameWorldAnchor = new THREE.Vector3(
+    flameMistGroup.position.x + FLAME_POS.x,
+    flameMistGroup.position.y + FLAME_POS.y,
+    flameMistGroup.position.z + FLAME_POS.z
+  );
+  flameLight.position.copy(diffuserGroup.localToWorld(flameWorldAnchor));
 
   // Carga el modelo real. Si falla (404, archivo ausente), se conserva la
   // primitiva de fallback y las posiciones por defecto de llama/niebla/luz
@@ -387,59 +452,82 @@ export function initScene(canvas) {
 
       const model = gltf.scene;
 
-      // Centra el modelo en X/Z y apoya su base en el suelo del grupo
-      // (y=0 local), escalándolo para que tenga la altura objetivo.
+      // Bounding box ANTES de recentrar/escalar — se loguea siempre, tanto
+      // en dev como en build, para poder calibrar TARGET_HEIGHT a ojo.
       const box = new THREE.Box3().setFromObject(model);
       const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
       box.getSize(size);
-      const scale = MODEL.height / size.y;
+      box.getCenter(center);
+      console.log(`[noor] ${MODEL.path} — bbox size:`, size, 'center:', center);
 
+      // Auto-centra el modelo en el origen (resta el center) y auto-escala
+      // según su dimensión MÁS GRANDE (no siempre size.y): diffuser_web.glb
+      // es una chimenea ancha y baja (size.x >> size.y), así que escalar
+      // solo por altura desbordaba el ancho del hero muy por encima del
+      // viewport. Math.max(size.x, size.y) garantiza que TARGET_HEIGHT es el
+      // techo del lado más grande, sea cual sea la forma del modelo.
+      const scale = TARGET_HEIGHT / Math.max(size.x, size.y);
       model.scale.setScalar(scale);
-      model.position.set(
-        -((box.min.x + box.max.x) / 2) * scale,
-        -box.min.y * scale,
-        -((box.min.z + box.max.z) / 2) * scale
-      );
+      model.position.copy(center).multiplyScalar(-scale);
 
-      const logMaterial = buildLogMaterial();
-      const glassMaterial = buildGlassMaterial(envRenderTarget.texture);
+      if (APPLY_NAMED_MATERIAL_OVERRIDES) {
+        // Pipeline del trimesh viejo: fuerza materiales propios por nombre
+        // de nodo (glass, log_*, mist_slot, resto = cuerpo).
+        const logMaterial = buildLogMaterial();
+        const glassMaterial = buildGlassMaterial(envRenderTarget.texture);
 
-      model.traverse((node) => {
-        if (!node.isMesh) return;
-        node.castShadow = false;
-        node.receiveShadow = false;
+        model.traverse((node) => {
+          if (!node.isMesh) return;
+          node.castShadow = false;
+          node.receiveShadow = false;
 
-        if (node.name === 'glass') {
-          node.material = glassMaterial;
-          node.renderOrder = 2; // dibuja el cristal después de los troncos
-        } else if (node.name.startsWith('log_')) {
-          node.material = logMaterial;
-        } else if (node.name === 'mist_slot') {
-          node.visible = false; // marcador de la ranura, no se renderiza
-        } else {
-          // frame_*, foot_*, back_wall, btn_* — material NUEVO por malla,
-          // nunca el que traía el .glb ni una instancia compartida.
-          node.material = buildBodyMaterial();
-        }
-      });
+          if (node.name === 'glass') {
+            node.material = glassMaterial;
+            node.renderOrder = 2; // dibuja el cristal después de los troncos
+          } else if (node.name.startsWith('log_')) {
+            node.material = logMaterial;
+          } else if (node.name === 'mist_slot') {
+            node.visible = false; // marcador de la ranura, no se renderiza
+          } else {
+            // frame_*, foot_*, back_wall, btn_* — material NUEVO por malla,
+            // nunca el que traía el .glb ni una instancia compartida.
+            node.material = buildBodyMaterial();
+          }
+        });
+      } else {
+        // Modelo Meshy: conserva tal cual sus materiales/texturas horneadas.
+        model.traverse((node) => {
+          if (!node.isMesh) return;
+          node.castShadow = false;
+          node.receiveShadow = false;
+        });
+      }
 
       diffuserGroup.add(model);
-      diffuserGroup.updateMatrixWorld(true);
 
-      // Ancla la llama, la niebla y la luz cálida a la ranura superior real.
-      const mistSlot = model.getObjectByName('mist_slot');
-      if (mistSlot) {
-        const slotWorld = mistSlot.getWorldPosition(new THREE.Vector3());
-        const slotLocal = diffuserGroup.worldToLocal(slotWorld.clone());
-        flame.position.copy(slotLocal);
-        mist.position.copy(slotLocal);
-        flameLight.position.copy(slotWorld).add(new THREE.Vector3(0, 0.15, 0));
-      }
+      // Reancla flameMistGroup a la altura REAL del techo del modelo. Antes
+      // vivía fijo en TARGET_HEIGHT/2, que solo coincide con el techo real
+      // cuando el modelo escala por altura — pero diffuser_web.glb escala
+      // por su lado más ancho (ver `scale` arriba), así que su altura real
+      // es menor que TARGET_HEIGHT y la llama/niebla quedaban flotando muy
+      // por encima de la chimenea, cerca del logo, desconectadas del
+      // producto. Con esto la niebla nace justo en la boca de la chimenea,
+      // como si saliera del humidificador de verdad.
+      const realHalfHeight = (size.y * scale) / 2;
+      flameMistGroup.position.y = realHalfHeight;
+      diffuserGroup.updateMatrixWorld(true);
+      const reanchoredFlameWorld = new THREE.Vector3(
+        flameMistGroup.position.x + FLAME_POS.x,
+        flameMistGroup.position.y + FLAME_POS.y,
+        flameMistGroup.position.z + FLAME_POS.z
+      );
+      flameLight.position.copy(diffuserGroup.localToWorld(reanchoredFlameWorld));
     },
     undefined,
     () => {
       // 404 esperado si el .glb no está disponible: mantenemos la primitiva.
-      console.info('[noor] diffuser.glb no encontrado — usando primitiva placeholder.');
+      console.info(`[noor] ${MODEL.path} no encontrado — usando primitiva placeholder.`);
     }
   );
 
@@ -449,9 +537,9 @@ export function initScene(canvas) {
 
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.55, // strength — moderado, solo realza la llama y los reflejos cálidos
-    0.45, // radius
-    0.82  // threshold — alto: evita que el difusor/niebla exploten a blanco
+    BLOOM_STRENGTH,
+    BLOOM_RADIUS,
+    BLOOM_THRESHOLD
   );
   composer.addPass(bloomPass);
 
@@ -464,6 +552,27 @@ export function initScene(canvas) {
 
   function setScrollProgress(p) {
     scrollProgress = THREE.MathUtils.clamp(p, 0, 1);
+  }
+
+  // 0 = difusor a pleno, 1 = totalmente desvanecido. Mismo factor que usa
+  // main.js para desvanecer el <canvas> por CSS (fadeP en el ScrollTrigger
+  // del hero) — aquí se aplica ADEMÁS a la opacidad real de los materiales
+  // de llama/niebla y a la intensidad de la luz de la llama, para que el
+  // brillo/bloom se apague de verdad y no quede un blob luminoso flotando
+  // cuando el canvas ya está casi transparente por CSS.
+  let fadeFactor = 0;
+
+  function setFadeFactor(f) {
+    fadeFactor = THREE.MathUtils.clamp(f, 0, 1);
+  }
+
+  // 0 = brillo normal, 1 = realce máximo. Opcional: main.js lo sube durante
+  // el clímax del CTA para que la luz de la llama y el bloom acompañen
+  // —sutilmente— el crecimiento del botón COMPRAR.
+  let glowBoost = 0;
+
+  function setGlowBoost(b) {
+    glowBoost = THREE.MathUtils.clamp(b, 0, 1);
   }
 
   const clock = new THREE.Clock();
@@ -481,12 +590,19 @@ export function initScene(canvas) {
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
 
+    const visibility = 1 - fadeFactor; // 1 = a pleno, 0 = invisible
+
     mist.userData.material.uniforms.uTime.value = t;
+    mist.userData.material.uniforms.uFade.value = visibility;
 
     // flicker orgánico de la llama: escala + opacidad, nunca la silueta
     // (que siempre es el gradiente suave de la textura)
     const flicker = 0.85 + 0.15 * Math.sin(t * 9.0) * Math.sin(t * 3.3 + 1.0);
-    flame.userData.material.opacity = flame.userData.baseOpacity * flicker;
+    flame.userData.material.opacity = flame.userData.baseOpacity * flicker * visibility;
+    // glowBoost realza intensidad de luz y bloom en el clímax del CTA — leve
+    // (+35%/+40% máx), nunca sustituye al flicker ni al fade.
+    flameLight.intensity = FLAME_LIGHT_INTENSITY * visibility * (1 + glowBoost * 0.35);
+    bloomPass.strength = BLOOM_STRENGTH * (1 + glowBoost * 0.4);
     flame.scale.set(
       flame.userData.baseScale.x * (0.94 + 0.06 * Math.sin(t * 2.4)),
       flame.userData.baseScale.y * (0.97 + 0.05 * Math.sin(t * 3.1 + 0.6)),
@@ -494,10 +610,15 @@ export function initScene(canvas) {
     );
 
     // rotación idle lenta (base) + rotación extra por scroll (amortiguada)
+    // *** REGLA DURA: la rotación idle SIEMPRE se aplica, en cada frame del
+    // render loop, sin condicionarla a scrollProgress ni a ningún estado del
+    // pin. El scroll solo AÑADE una rotación extra encima (currentExtraRotation).
+    // NUNCA sustituir esta línea por una rotación derivada directamente del
+    // scroll: eso deja el producto estático en cuanto el usuario no scrollea. ***
     const idleSpeed = prefersReducedMotion ? 0.02 : 0.08;
     diffuserGroup.rotation.y += idleSpeed * dt;
 
-    const targetExtraRotation = prefersReducedMotion ? 0 : scrollProgress * Math.PI * 0.6;
+    const targetExtraRotation = prefersReducedMotion ? 0 : scrollProgress * Math.PI * 0.22; // bajado de 0.6: giraba demasiado rápido en la última toma (justo antes del fundido)
     currentExtraRotation = damp(currentExtraRotation, targetExtraRotation, 3.5, dt);
     diffuserGroup.rotation.y += currentExtraRotation * dt; // deriva suave, no salto
 
@@ -524,5 +645,5 @@ export function initScene(canvas) {
 
   window.addEventListener('resize', resize);
 
-  return { render, resize, setScrollProgress, scene, camera, renderer };
+  return { render, resize, setScrollProgress, setFadeFactor, setGlowBoost, scene, camera, renderer };
 }

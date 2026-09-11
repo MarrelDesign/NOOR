@@ -88,6 +88,58 @@ body {
   transform: translateY(12px);
 }
 
+/* "Lo que incluye": oculto por defecto — lo revela heroPinTl (main.js)
+   durante el pin del hero, NO la animación de entrada de carga (por eso no
+   está en el mismo grupo que .hero-subtitle/.hero-purchase arriba). */
+.hero-includes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0.15rem 0;
+}
+
+.hero-includes-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--glow-2);
+  opacity: 0;
+}
+
+.hero-includes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem 1.75rem;
+}
+
+.hero-includes-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 0.92rem;
+  color: var(--hueso);
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.hero-includes-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--glow-2);
+  flex-shrink: 0;
+  box-shadow: 0 0 8px 1px rgba(240, 130, 78, 0.65);
+}
+
 .logo-svg {
   width: 100%;
   height: auto;
@@ -140,6 +192,7 @@ body {
 }
 
 .btn-cta {
+  position: relative;
   display: inline-block;
   padding: 0.9rem 2.25rem;
   border-radius: 999px;
@@ -158,6 +211,26 @@ body {
 .btn-cta:hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 14px 40px -8px rgba(240, 130, 78, 0.7);
+}
+
+/* Envoltorio del CTA del hero: solo aporta el halo del clímax (heroPinTl en
+   main.js escala .btn-cta y anima la opacidad/escala de .btn-cta-glow). El
+   botón de #comprar (btn-cta--buy) NO usa este wrapper — no participa del
+   pin del hero. */
+.btn-cta-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.btn-cta-glow {
+  position: absolute;
+  inset: -22px;
+  border-radius: 999px;
+  background: radial-gradient(circle, var(--glow-1) 0%, var(--glow-2) 45%, transparent 72%);
+  filter: blur(20px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .scroll-indicator {
@@ -202,9 +275,29 @@ body {
   justify-content: center;
   padding: 10vh 1.5rem;
   text-align: center;
+  overflow: hidden;
+}
+
+/* Ascuas de fondo: un resplandor cálido y difuso por sección, como si la
+   luz de Noor se colara en la habitación oscura — el mismo lenguaje del
+   bloom del hero, pero en reposo. Posición y color propios por sección para
+   que no se sienta como un efecto repetido en serie. */
+.section::before {
+  content: '';
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  max-width: 620px;
+  max-height: 620px;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .section-inner {
+  position: relative;
+  z-index: 1;
   max-width: 38rem;
   display: flex;
   flex-direction: column;
@@ -237,13 +330,27 @@ body {
 }
 
 .eyebrow {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 0.72rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--glow-2);
+}
+
+/* Punto-ascua antes de cada eyebrow: mismo motivo que hero-includes-dot,
+   crea un hilo visual entre el hero y las secciones de debajo. */
+.eyebrow::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--glow-2);
+  box-shadow: 0 0 8px 1px rgba(240, 130, 78, 0.7);
+  flex-shrink: 0;
 }
 
 .section-intro {
@@ -267,37 +374,76 @@ body {
   color: var(--glow-2);
 }
 
+#como-funciona::before {
+  top: -12%;
+  left: -14%;
+  background: radial-gradient(circle, var(--glow-2), transparent 70%);
+  opacity: 0.14;
+}
+
+#beneficios::before {
+  bottom: -18%;
+  right: -12%;
+  background: radial-gradient(circle, var(--glow-3), transparent 70%);
+  opacity: 0.14;
+}
+
+#comprar::before {
+  top: -14%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, var(--glow-2), transparent 70%);
+  opacity: 0.16;
+}
+
 /* ---------------------------------------------------------------------- */
 /* #como-funciona — pasos                                                  */
 /* ---------------------------------------------------------------------- */
 
 .steps-row {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 1.5rem;
-  margin-top: 2.5rem;
+  margin-top: 3rem;
   width: 100%;
 }
 
+/* Hilo de ascua que atraviesa los tres números — el gesto (llenar,
+   encender, respirar) es un único hilo continuo, no tres tarjetas sueltas. */
+.steps-row::before {
+  content: '';
+  position: absolute;
+  top: 1.375rem;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glow-2) 20%, var(--glow-2) 80%, transparent);
+  opacity: 0.4;
+}
+
 .step {
+  position: relative;
   flex: 1 1 220px;
   max-width: 300px;
   text-align: left;
-  background: rgba(29, 24, 34, 0.4);
-  border: 1px solid var(--ink-line);
-  border-radius: 18px;
-  padding: 1.75rem 1.5rem;
-  backdrop-filter: blur(6px);
 }
 
 .step-number {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.6rem;
-  color: var(--glow-2);
-  margin-bottom: 0.6rem;
+  font-size: 1.1rem;
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--glow-1), var(--glow-2) 65%, var(--glow-3));
+  box-shadow: 0 0 22px 2px rgba(240, 130, 78, 0.45);
+  margin-bottom: 1rem;
 }
 
 .step-title {
@@ -332,22 +478,27 @@ body {
 .benefits-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  gap: 2.5rem 2rem;
   margin-top: 2.5rem;
   width: 100%;
   text-align: left;
 }
 
 .benefit-card {
-  background: rgba(29, 24, 34, 0.4);
-  border: 1px solid var(--ink-line);
-  border-radius: 18px;
-  padding: 1.75rem 1.5rem;
-  backdrop-filter: blur(6px);
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--ink-line);
 }
 
 .benefit-card .icon-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   margin-bottom: 1rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 231, 196, 0.16), rgba(240, 130, 78, 0.05) 65%, transparent 80%);
+  box-shadow: inset 0 0 0 1px rgba(240, 130, 78, 0.3);
 }
 
 .benefit-card h3 {
@@ -368,8 +519,22 @@ body {
 }
 
 /* ---------------------------------------------------------------------- */
-/* #ritual — copy editorial                                                */
+/* #ritual — copy editorial. El momento de mayor presencia de las secciones
+   de contenido: un resplandor de fondo más grande y cálido que el resto,
+   como si la habitación entera se templara con la luz de Noor.           */
 /* ---------------------------------------------------------------------- */
+
+#ritual::before {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85vw;
+  height: 85vw;
+  max-width: 860px;
+  max-height: 860px;
+  background: radial-gradient(circle, var(--glow-1), var(--glow-2) 45%, transparent 72%);
+  opacity: 0.16;
+}
 
 .ritual-copy {
   margin-top: 2rem;
@@ -383,27 +548,56 @@ body {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 600;
-  font-size: clamp(1.2rem, 2.6vw, 1.6rem);
+  font-size: clamp(1.3rem, 3vw, 1.85rem);
   line-height: 1.65;
   color: var(--hueso);
   max-width: 60ch;
   margin: 0;
 }
 
+/* Ascua entre las dos citas: la pausa entre encender y respirar. */
+.ritual-ember {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--glow-1);
+  box-shadow:
+    0 0 16px 4px rgba(255, 231, 196, 0.6),
+    0 0 34px 10px rgba(240, 130, 78, 0.35);
+}
+
 /* ---------------------------------------------------------------------- */
-/* #comprar — panel de compra                                              */
+/* #comprar — panel de compra. Mismo halo cálido que .btn-cta-glow del      */
+/* hero (climax del CTA) — el panel final cierra el hilo visual del CTA.   */
 /* ---------------------------------------------------------------------- */
 
-.buy-panel {
+.buy-panel-wrap {
+  position: relative;
   margin-top: 2rem;
   width: 100%;
   max-width: 28rem;
+}
+
+.buy-panel-glow {
+  position: absolute;
+  inset: -10%;
+  border-radius: 32px;
+  background: radial-gradient(circle, var(--glow-2) 0%, transparent 70%);
+  filter: blur(44px);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.buy-panel {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.4rem;
-  background: rgba(20, 16, 25, 0.72);
-  border: 1px solid var(--ink-line);
+  background: linear-gradient(165deg, rgba(35, 27, 33, 0.85), rgba(20, 16, 25, 0.88));
+  border: 1px solid rgba(240, 130, 78, 0.3);
   border-radius: 22px;
   padding: 2.5rem 2rem;
   backdrop-filter: blur(12px);
@@ -484,7 +678,19 @@ body {
   z-index: 1;
   padding: 3rem 1.5rem 2.5rem;
   text-align: center;
-  border-top: 1px solid var(--ink-line);
+  border-top: none;
+}
+
+.site-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(90%, 640px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glow-2), transparent);
+  opacity: 0.4;
 }
 
 .footer-inner {
@@ -552,6 +758,9 @@ body {
   .hero-logo { width: 200px; }
   .hero-purchase { gap: 1rem; }
   .btn-cta { padding: 0.8rem 1.75rem; font-size: 0.78rem; }
+  .hero-includes-list { gap: 0.5rem 1.1rem; }
+  .hero-includes-list li { font-size: 0.85rem; }
+  .btn-cta-glow { inset: -14px; filter: blur(14px); } /* halo más contenido: menos aire en pantallas estrechas */
 }
 
 @media (max-width: 900px) {
@@ -560,10 +769,12 @@ body {
 
 @media (max-width: 560px) {
   .benefits-grid { grid-template-columns: 1fr; }
-  .steps-row { flex-direction: column; align-items: stretch; }
+  .steps-row { flex-direction: column; align-items: stretch; gap: 2.25rem; }
+  .steps-row::before { display: none; } /* el hilo solo tiene sentido en fila; en columna cada número ya lleva su glow */
   .step { max-width: none; }
   .buy-panel { padding: 2rem 1.5rem; }
   .trust-row { flex-direction: column; align-items: center; gap: 0.75rem; }
+  .section::before { width: 90vw; height: 90vw; filter: blur(60px); } /* menos blur en móvil: más barato y evita que el resplandor se salga del viewport */
 }
 
 /* ---------------------------------------------------------------------- */

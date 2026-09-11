@@ -1,3 +1,17 @@
-node_modules
-dist
+node_modules/
+dist/
+.env
 .DS_Store
+*.log
+__pycache__/
+*.pyo
+/producto/
+/collage/
+Gemini*
+*generated*
+.cache/
+
+# ruido específico de este repo (nombres reales, no coinciden con los patrones genéricos de arriba)
+Documento sin título
+Producto 1 collae/
+productos /

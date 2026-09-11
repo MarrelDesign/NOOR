@@ -44,9 +44,28 @@
 
         <p class="hero-subtitle">Una llama viva, sin fuego. El ritual de calma para tu casa.</p>
 
+        <!-- Revelado por scroll durante el pin del hero (ver heroPinTl en
+             main.js) — oculto por defecto (opacity:0 en style.css), NO por
+             la animación de entrada de carga. Duplica a propósito los 4
+             ítems de #comprar .buy-includes (misma info, aparición
+             distinta); por eso va aria-hidden, la lista accesible real
+             sigue siendo la del panel de compra. -->
+        <div class="hero-includes" aria-hidden="true">
+          <span class="hero-includes-eyebrow">LO QUE INCLUYE</span>
+          <ul class="hero-includes-list">
+            <li><span class="hero-includes-dot"></span>Difusor Noor</li>
+            <li><span class="hero-includes-dot"></span>Mando a distancia</li>
+            <li><span class="hero-includes-dot"></span>Cable USB</li>
+            <li><span class="hero-includes-dot"></span>Guía de uso</li>
+          </ul>
+        </div>
+
         <div class="hero-purchase">
           <span class="hero-price">59,99&nbsp;€</span>
-          <a href="#comprar" class="btn-cta" data-checkout-link>Comprar ahora</a>
+          <span class="btn-cta-wrap">
+            <span class="btn-cta-glow" aria-hidden="true"></span>
+            <a href="#comprar" class="btn-cta" data-checkout-link>Comprar ahora</a>
+          </span>
         </div>
       </div>
 
@@ -132,6 +151,7 @@
         <h2 class="reveal">El ritual</h2>
         <div class="ritual-copy">
           <p class="reveal">“Al final del día, enciendes tu luz. La llama sube despacio, el aroma se abre, y la casa cambia de temperatura sin tocar el termostato.”</p>
+          <span class="ritual-ember reveal" aria-hidden="true"></span>
           <p class="reveal">“No es un aparato más: es la señal de que el día se cierra y tu momento empieza. Enciende, respira, descansa.”</p>
         </div>
       </div>
@@ -142,7 +162,9 @@
         <span class="eyebrow reveal">ENCIENDE TU LUZ</span>
         <h2 class="reveal">Llévate tu Noor</h2>
 
-        <div class="buy-panel reveal">
+        <div class="buy-panel-wrap reveal">
+          <span class="buy-panel-glow" aria-hidden="true"></span>
+          <div class="buy-panel">
           <span class="buy-price">59,99&nbsp;€</span>
 
           <ul class="buy-includes">
@@ -172,6 +194,7 @@
           </div>
 
           <p class="buy-note">Marca recién nacida, sin reseñas infladas. Si no te enamora, te devolvemos el dinero en 14 días.</p>
+          </div>
         </div>
       </div>
     </section>
